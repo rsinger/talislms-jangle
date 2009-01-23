@@ -23,4 +23,30 @@ class CollectionsController {
             text:feed.toMap().encodeAsJSON())
 
     }
+    def relationship = {
+        requestService.connectorBase = request.getHeader('x-connector-base') ?
+            request.getHeader('x-connector-base') : ''
+        def feed = new FeedResponse(request:request.forwardURI)
+        if(!params.offset) params.offset = 0
+        def coll = WorkMetadata.getAll(requestService.translateId(params.id))
+        def related = []
+        coll.each {
+            related = it.getWorks(params.offset,params.format)
+        }
+        feed.setTotalResults(related.size())
+        feed.offset = params.offset
+        for(r in related) {
+            feed.addData(r)
+        }
+        if(related.size() > 0) {
+            render(contentType:requestService.contentType(request.getHeader('accept')),
+                text:feed.toMap().encodeAsJSON())
+        } else {
+
+          response.status = 404 //Not Found
+          render "${request.forwardURI} not found."
+        }
+
+
+    }
 }

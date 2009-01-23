@@ -40,6 +40,7 @@ class WorkMetadata {
     def toMap(format="marcxml") {
         if(raw_data && !record) {raw_to_record()}
         if(!title) {getTitleFrom245()}
+        if(title == '') {title = 'n/a'}
         if(hasItems == null) {Item.itemCheckFromWorks(this)}
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
         uri = "${requestService.connectorBase}/resources/${id}"

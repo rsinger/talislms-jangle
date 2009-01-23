@@ -32,6 +32,12 @@ class SqlQuery {
         def sql = new Sql(dataSource)
         def result
     }
+
+    def getWorksFromCollectionId(collectionId) {
+        def sql = new Sql(dataSource)
+        def result
+        result = sql.rows("SELECT w.WORK_ID FROM WORK_METADATA w, TITLE t WHERE t.WORK_ID = w.WORK_ID AND w.COLLECTION_ID = ${collectionId} ORDER BY w.EDIT_DATE DESC")
+    }
 	
 }
 

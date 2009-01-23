@@ -21,12 +21,12 @@ class WorkCollection {
 
     def toMap(format="dc") {
         uri = "${requestService.connectorBase}/collections/${id}"
-        def collMap = ["id":uri,"title":name]
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+        def collMap = ["id":uri,"title":name, "updated":dateFormatter.format(new Date())]        
         checkHasWorks()
         if(hasWorks) {
             collMap["relationships"] = ["http://jangle.org/vocab/Entities#Resource":
-            "${uri}/resources/", "updated":dateFormatter.format(new Date())]
+            "${uri}/resources/"]
         }
         switch(format) {
             default:
@@ -70,6 +70,12 @@ class WorkCollection {
             collections << WorkCollection.get(it)
         }
         collections
+    }
+
+    def getWorks(offset=0,format='marcxml') {
+        def sql = new SqlQuery()
+        
+
     }
 
 }
