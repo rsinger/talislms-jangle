@@ -26,7 +26,7 @@ class WorkCollection {
         checkHasWorks()
         if(hasWorks) {
             collMap["relationships"] = ["http://jangle.org/vocab/Entities#Resource":
-            "${uri}/resources/", "updated":dateFormatter.format(new DateTime())]
+            "${uri}/resources/", "updated":dateFormatter.format(new Date())]
         }
         switch(format) {
             default:
@@ -62,6 +62,14 @@ class WorkCollection {
         if(workCheck) {
             hasWorks = true
         }
+    }
+
+    static def findAllByWorkId(workId) {
+        def collections = []
+        Title.executeQuery("SELECT DISTINCT t.collectionId FROM Title t WHERE t.workId = ?", [workId]).each {
+            collections << WorkCollection.get(it)
+        }
+        collections
     }
 
 }

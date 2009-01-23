@@ -51,14 +51,16 @@ class ResourcesController {
             if(params.relationship == "items") {
                 related = it.getItems(params.offset,params.format)
             } else {
-                related = it.getCollections(params.offset)
+                related = it.getCollections(params.offset,params.format)
             }
         }
+        feed.setTotalResults(related.size())
+        feed.offset = params.offset
         for(r in related) {
             feed.addData(r)
         }
         if(related.size() > 0) {
-            render(contentType:requestService.contentType(request.format),
+            render(contentType:requestService.contentType(request.getHeader('accept')),
                 text:feed.toMap().encodeAsJSON())
         } else {
 

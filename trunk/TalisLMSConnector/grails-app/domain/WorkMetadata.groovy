@@ -92,8 +92,7 @@ class WorkMetadata {
     }
 
     def toDc(workMap) {
-        toMarcXml(workMap)
-        println "Hello"
+        toMarcXml(workMap)        
         workMap["format"] = "http://jangle.org/vocab/formats#http://purl.org/dc/elements/1.1/"
     }
 
@@ -160,12 +159,20 @@ class WorkMetadata {
         return itemList
     }
 
+    def getCollections(offset=0,format="dc") {
+        def colls = WorkCollection.findAllByWorkId(this.id)
+        def collList = []
+        colls.each {
+            collList << it.toMap(format)
+        }
+        return collList
+    }
 
 
     def validFormats() {
         return ["marcxml":"http://jangle.org/vocab/formats#http://www.loc.gov/MARC21/slim",
-        "marc":"http://jangle.org/vocab#application/marc",
-        "dc":"http://purl.org/dc/elements/1.1/",
+        "marc":"http://jangle.org/vocab/formats#application/marc",
+        "dc":"http://jangle.org/vocab/formats#http://purl.org/dc/elements/1.1/",
         "oai_dc":"http://jangle.org/vocab/formats#http://www.openarchives.org/OAI/2.0/oai_dc/",
         "mods":"http://jangle.org/vocab/formats#http://www.loc.gov/mods/v3"]
 

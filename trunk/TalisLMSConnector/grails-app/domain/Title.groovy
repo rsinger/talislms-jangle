@@ -1,6 +1,6 @@
 class Title {
     Integer collectionId
-    Integer workId
+    Long workId
     String title
     static mapping = {
        table 'TITLE'
@@ -17,15 +17,15 @@ class Title {
     static def getTitlesForWorks(worksList) {
         def works = [:]
         worksList.each {
-            works[it.id.intValue()] = it
+            works[it.id] = it
         }
         def titleList = findAll("from Title as t where t.workId in (:workIds)",[workIds:works.keySet().toList()])
 
         titleList.each {
             
             if (it != null) {
-                works[it.workId.intValue()].setTitle(it.title)
-                works[it.workId.intValue()].addCollection(it.collectionId)
+                works[it.workId].setTitle(it.title)
+                works[it.workId].addCollection(it.collectionId)
             }
         }
     }
