@@ -4,15 +4,15 @@ class ItemsController {
     def feedService
     def index = {
         requestService.init()
-        requestService.entityBuilder.setConnectorBase(request.getHeader('x-connector-base'))
+        feedService.setConnectorBase(request.getHeader('x-connector-base'))
         if(!params.offset) params.offset = 0
         def items = []
         def feed = new FeedResponse(request:request.forwardURI)
-        feed.setOffset(params.offset)
+        feed.setOffset(params.offset.toInteger())
 
 //        
         if(!params.id) {
-            items = Item.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,offset:params.offset,sort:"created",
+            items = Item.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,offset:params.offset.toInteger(),sort:"created",
             order:"desc")
             feed.setTotalResults(Item.count())
         } else {
@@ -38,7 +38,7 @@ class ItemsController {
         }
 
         feed.setTotalResults(related.size())
-        feed.offset = params.offset
+        feed.offset = params.offset.toInteger()
 
         if(related.size() > 0) {
             feedService.buildFeed(feed,related,params)

@@ -10,8 +10,8 @@ import java.text.SimpleDateFormat
 class WorkMetadata {
     Byte[] raw_data
     Record record
-    Boolean opac_suppress
-    String control_number
+    Boolean opacSuppress
+    String controlNumber
     Timestamp modified
     Boolean hasItems
     List collections = []
@@ -26,8 +26,8 @@ class WorkMetadata {
         columns {
             id column: 'WORK_ID'
             raw_data column: 'RAW_DATA'
-            control_number column: 'TALIS_CONTROL_NUMBER'
-            opac_suppress column: 'SUPPRESS_FROM_OPAC'
+            controlNumber column: 'TALIS_CONTROL_NUMBER'
+            opacSuppress column: 'SUPPRESS_FROM_OPAC'
             modified column: 'MODIFIED_DATE'
         }
     }
@@ -60,6 +60,7 @@ class WorkMetadata {
             relationships["http://jangle.org/vocab/Entities#Item"] =
                 "${uri}/items/"
         }
+        if(!opacSuppress) { workMap["categories"] = ['opac']}
         workMap["relationships"] = relationships
         return workMap
     }

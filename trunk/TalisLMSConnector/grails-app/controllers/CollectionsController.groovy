@@ -8,9 +8,9 @@ class CollectionsController {
         if(!params.offset) params.offset = 0
         def colls = []
         def feed = new FeedResponse(request:request.forwardURI)
-        feed.setOffset(params.offset)
+        feed.setOffset(params.offset.toInteger())
         if(!params.id) {
-            colls = WorkCollection.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,offset:params.offset)
+            colls = WorkCollection.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,offset:params.offset.toInteger())
             feed.setTotalResults(WorkCollection.count())
         } else {
             colls = [WorkCollection.get(params.id)]
@@ -29,11 +29,11 @@ class CollectionsController {
         def coll = WorkCollection.getAll(requestService.translateId(params.id))
         def related = []
         coll.each {
-            related = it.getWorks(params.offset)
+            related = it.getWorks(params.offset.toInteger())
         }
 
         feed.setTotalResults(related.size())
-        feed.offset = params.offset
+        feed.offset = params.offset.toInteger()
 
         if(related.size() > 0) {
             feedService.buildFeed(feed,related,params)

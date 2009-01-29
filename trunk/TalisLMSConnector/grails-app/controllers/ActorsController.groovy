@@ -8,10 +8,10 @@ class ActorsController {
         if(!params.offset) { params.offset = 0}
         def borrowers = []
         def feed = new FeedResponse(request:request.forwardURI)
-        feed.setOffset(params.offset)
+        feed.setOffset(params.offset.toInteger())
         if (!params.id) {
             borrowers = Borrower.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
-                offset:params.offset, sort:"modified",order:"desc")
+                offset:params.offset.toInteger(), sort:"modified",order:"desc")
             feed.setTotalResults(Borrower.count())
 
         } else {
