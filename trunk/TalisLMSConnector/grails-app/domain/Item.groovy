@@ -74,7 +74,7 @@ class Item {
         if(workId) {
             relationships["http://jangle.org/vocab/Entities#Resource"]="${uri}/resources/"
         }
-        
+        itemMap['relationships'] = relationships
 
         return itemMap
     }
@@ -119,6 +119,10 @@ class Item {
 
     def getLocation() {
 
+    }
+
+    def getWork() {
+        return WorkMetadata.get(workId)
     }
     
 

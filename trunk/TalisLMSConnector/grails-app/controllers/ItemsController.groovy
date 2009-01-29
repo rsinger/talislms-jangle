@@ -25,4 +25,31 @@ class ItemsController {
             text:feed.toMap().encodeAsJSON())
 
     }
+
+    def relationship = {
+        requestService.init()
+        feedService.setConnectorBase(request.getHeader('x-connector-base'))
+        def feed = new FeedResponse(request:request.forwardURI)
+        if(!params.offset) params.offset = 0
+        def items = Item.getAll(requestService.translateId(params.id))
+        def related = []
+        items.each {
+            related = [it.getWork()]
+        }
+
+        feed.setTotalResults(related.size())
+        feed.offset = params.offset
+
+        if(related.size() > 0) {
+            feedService.buildFeed(feed,related,params)
+            render(contentType:requestService.contentType(request.getHeader('accept')),
+                text:feed.toMap().encodeAsJSON())
+        } else {
+
+          response.status = 404 //Not Found
+          render "${request.forwardURI} not found."
+        }
+
+
+    }
 }
