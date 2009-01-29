@@ -70,6 +70,7 @@ class Item {
         } else {
             itemMap["title"] = "not available"
         }
+        if(statusMessage) itemMap['description'] = statusMessage
         if(workId) {
             relationships["http://jangle.org/vocab/Entities#Resource"]="${uri}/resources/"
         }
