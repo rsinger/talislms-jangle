@@ -3,11 +3,10 @@ import java.util.Formatter.DateTime
 import java.text.SimpleDateFormat
 class WorkCollection {
     String name
-    String collectionCode
-    def requestService
+    String collectionCode    
     String uri
     Boolean hasWorks = false
-    static transients = ['requestService', 'hasWorks', 'uri']
+    static transients = ['hasWorks', 'uri']
     static mapping = {
        table 'COLLECTION'
        version false
@@ -19,8 +18,11 @@ class WorkCollection {
 
     }
 
-    def toMap(format="dc") {
-        uri = "${requestService.connectorBase}/collections/${id}"
+    def setEntityUri(base) {
+        uri = "${base}/collections/${id}"
+    }
+    
+    def toMap() {        
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
         def collMap = ["id":uri,"title":name, "updated":dateFormatter.format(new Date())]        
         checkHasWorks()
@@ -28,16 +30,12 @@ class WorkCollection {
             collMap["relationships"] = ["http://jangle.org/vocab/Entities#Resource":
             "${uri}/resources/"]
         }
-        switch(format) {
-            default:
-                toDc(collMap)
-        }
+
         return collMap
     }
 
-    def toDc(collMap) {
-        collMap["content_type"] = "application/xml"
-        collMap["format"] = "http://jangle.org/vocab/formats#http://purl.org/dc/elements/1.1/"
+    def to_dc() {
+
         def writer = new StringWriter()
         def xml = new MarkupBuilder(writer)
 
@@ -50,11 +48,7 @@ class WorkCollection {
             'dc:source'('http://jangle.org/vocab/Entity#Collection')
 
         }
-
-
-
-
-        collMap["content"] = writer.toString()
+        return writer.toString()
     }
 
     def checkHasWorks() {
@@ -72,9 +66,9 @@ class WorkCollection {
         collections
     }
 
-    def getWorks(offset=0,format='marcxml') {
-        def sql = new SqlQuery()
-        
+    def getWorks(offset=0) {
+        def works = WorkMetadata.findByCollectionId(id,offset)
+        return works
 
     }
 

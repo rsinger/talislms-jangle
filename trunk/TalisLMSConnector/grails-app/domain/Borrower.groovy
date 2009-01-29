@@ -8,10 +8,9 @@ class Borrower {
     Date registration_date
     Timestamp created
     Timestamp modified
-    Timestamp expiration
-    def requestService
+    Timestamp expiration    
     String uri
-    static transients = ['requestService','uri']
+    static transients = ['uri']
     static mapping = {
         table 'BORROWER'
         version false
@@ -28,22 +27,21 @@ class Borrower {
         }
     }
 
-    def toMap(format='vcard') {
-        def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-        uri = "${requestService.connectorBase}/actors/${id}"
+    def setEntityUri(base) {
+        uri = "${base}/actors/${id}"
+    }
+
+    def toMap() {
+  
+        def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")        
         def borrowerMap = ["id":uri,
         "title":"${surname}, ${first_names}","updated":dateFormatter.format(modified),
         "created":dateFormatter.format(created)]
-        switch(format) {
-            default:
-                toVcard(borrowerMap)
-        }
+
         return borrowerMap
     }
 
-    def toVcard(borrowerMap) {
-        borrowerMap["content_type"] = "text/x-vcard"
-        borrowerMap["format"] = "http://jangle.org/vocab/formats#text/x-vcard"
+    def to_vcard() {
         def dateFormatter = new org.apache.log4j.helpers.ISO8601DateFormat()
         def vcard="BEGIN:VCARD\nVERSION:3.0\nFN:${first_names} ${surname}\n"
         vcard = "${vcard}N:${surname};${first_names};;;\n"
@@ -51,7 +49,7 @@ class Borrower {
         vcard = "${vcard}URL:${uri}\n"
         vcard = "${vcard}REV:${dateFormatter.format(modified)}\n"
         vcard = "${vcard}X-BARCODE:${barcode}\nEND:VCARD\n"
-        borrowerMap["content"] = vcard
+        return(vcard)
 
     }
 }

@@ -5,8 +5,8 @@ class TypeStatus implements Serializable {
     static mapping = {
         table 'TYPE_STATUS'
         version false
-        columns {
-            id composite:['typeId','subType']
+        id composite:['typeId','subType']
+        columns {            
             typeId column: 'TYPE_STATUS'
             subType column: 'SUB_TYPE'
             name column: 'NAME'

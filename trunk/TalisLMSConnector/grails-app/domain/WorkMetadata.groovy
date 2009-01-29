@@ -17,11 +17,12 @@ class WorkMetadata {
     List collections = []
     String title
     String uri
-    def requestService
-    static transients = ['record', 'hasItems', 'collections', 'title', 'uri', 'requestService']
+
+    static transients = ['record', 'hasItems', 'collections', 'title', 'uri']
     static mapping = {
         table 'WORKS_META'
         version false
+        cache usage:'read-only'
         columns {
             id column: 'WORK_ID'
             raw_data column: 'RAW_DATA'
@@ -30,20 +31,24 @@ class WorkMetadata {
             modified column: 'MODIFIED_DATE'
         }
     }
+    
 
+    def setEntityUri(base) {
+        uri = "${base}/resources/${id}"
+    }
     def raw_to_record() {
         def bis = new ByteArrayInputStream(raw_data)
         def reader = new RecordReader(bis)
         record = reader.getNext()
     }
 
-    def toMap(format="marcxml") {
+    def toMap() {
         if(raw_data && !record) {raw_to_record()}
         if(!title) {getTitleFrom245()}
         if(title == '') {title = 'n/a'}
         if(hasItems == null) {Item.itemCheckFromWorks(this)}
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-        uri = "${requestService.connectorBase}/resources/${id}"
+        
         def workMap = ["id":uri,"title":title,
         "updated":dateFormatter.format(modified)]
         def relationships = [:]
@@ -56,62 +61,23 @@ class WorkMetadata {
                 "${uri}/items/"
         }
         workMap["relationships"] = relationships
-        switch(format) {
-            case "marc":
-                this.toMarc(workMap)
-                break
-            case "mods":
-                this.toMods(workMap)
-                break
-            case "dc":
-                this.toDc(workMap)
-                break
-            case "oai_dc":
-                this.toOaiDc(workMap)
-                break
-            case "atom":
-                doNothing()
-                break
-            default:
-                this.toMarcXml(workMap)
-        }
-        setAlternateFormats(workMap,format)
         return workMap
     }
 
     def doNothing() {}
 
-    def toMarc(workMap) {
-        workMap["content_type"] = "application/marc"
-        workMap["content"] = record.ToISO2709().encodeBase64().toString()
-        workMap["format"] = "http://jangle.org/vocab/formats#application/marc"
+    def to_marc() {
+        return record.ToISO2709().encodeBase64().toString()
     }
 
-    def toMods(workMap) {
-        toMarcXml(workMap)
-        workMap["format"] = "http://jangle.org/vocab/formats#http://www.loc.gov/mods/v3"
-    }
-
-    def toDc(workMap) {
-        toMarcXml(workMap)        
-        workMap["format"] = "http://jangle.org/vocab/formats#http://purl.org/dc/elements/1.1/"
-    }
-
-    def toOaiDc(workMap) {
-        toMarcXml(workMap)
-        workMap["format"] = "http://jangle.org/vocab/formats#http://www.openarchives.org/OAI/2.0/oai_dc/"
-    }
-    def toMarcXml(workMap) {
-        workMap["content_type"] = "application/xml"
-     
+    def to_marcxml() {
         def strWriter = new StringWriter()
         def serializer = new org.apache.xml.serialize.XMLSerializer()
         serializer.setOutputCharStream(strWriter)
         serializer.serialize(record.toMarcXml())
         def marcList = strWriter.toString().split(/\n/)
-        workMap["content"] = marcList[1..(marcList.size()-1)][0].replaceAll(
+        return marcList[1..(marcList.size()-1)][0].replaceAll(
             /\<record\>/,'<record xmlns="http://www.loc.gov/MARC21/slim">')
-        workMap["format"] = "http://jangle.org/vocab/formats#http://www.loc.gov/MARC21/slim"
 
     }
 
@@ -151,22 +117,14 @@ class WorkMetadata {
         }
     }
 
-    def getItems(offset=0,format="dlfexpanded") {
+    def getItems(offset=0) {
         def items = Item.findAllByWorkId(this.id,[sort:"modified",order:"desc",offset:offset])
-        def itemList = []
-        items.each {
-            itemList << it.toMap(format)
-        }
-        return itemList
+        return items
     }
 
-    def getCollections(offset=0,format="dc") {
+    def getCollections(offset=0) {
         def colls = WorkCollection.findAllByWorkId(this.id)
-        def collList = []
-        colls.each {
-            collList << it.toMap(format)
-        }
-        return collList
+        return colls
     }
 
 
@@ -177,6 +135,12 @@ class WorkMetadata {
         "oai_dc":"http://jangle.org/vocab/formats#http://www.openarchives.org/OAI/2.0/oai_dc/",
         "mods":"http://jangle.org/vocab/formats#http://www.loc.gov/mods/v3"]
 
+    }
+
+    static def findByCollectionId(collectionId, offset=0) {
+        def workIds = WorkMetadata.executeQuery(
+            "SELECT w.id FROM WorkMetadata w, Title t WHERE w.id = t.workId AND t.collectionId = 1 ORDER BY w.modified DESC", [max:100,offset:offset])
+        return WorkMetadata.getAll(workIds)
     }
 
 }

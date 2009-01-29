@@ -9,6 +9,7 @@
 // if(System.properties["${appName}.config.location"]) {
 //    grails.config.locations << "file:" + System.properties["${appName}.config.location"]
 // }
+
 grails.mime.file.extensions = true // enables the parsing of file extensions from URLs into the request format
 grails.mime.types = [ html: ['text/html','application/xhtml+xml'],
                       xml: ['text/xml', 'application/xml'],
@@ -66,5 +67,6 @@ log4j {
     }
     additivity.StackTrace=false
 }
-
+import org.ho.yaml.Yaml
+jangle.connector = Yaml.load(new File('config.yml'))
 

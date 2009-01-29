@@ -1,6 +1,8 @@
 class RequestService {
-    public String connectorBase
-    
+    def connectorBase
+    def dataSource
+    def entityBuilder
+    static scope = "request"
     def translateId(id) {        
         if(id =~ /^\d*$/) {
             return [id]
@@ -26,6 +28,15 @@ class RequestService {
         return ids
 
     }
+
+    def setConnectorBase(header) {
+        connectorBase = header ? header : ''
+
+    }
+
+    def getConnectorBase() {
+        connectorBase
+    }
     
     def contentType(type) {
 
@@ -40,4 +51,16 @@ class RequestService {
         contentType
 
     }
+
+    def init() {
+        entityBuilder = new EntityBuilder(dataSource:dataSource)
+        
+    }
+
+    def setResourceAttributes(works) {
+        Item.itemCheckFromWorks(works)
+        Title.getTitlesForWorks(works)
+        entityBuilder.setEntityAttributes(works)
+    }
+
 }
