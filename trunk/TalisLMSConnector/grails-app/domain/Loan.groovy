@@ -29,12 +29,7 @@ class Loan {
         itemList.each {
             items[it.id.intValue()] = it
         }
-        def availCheck = findAllByItemIdAndCurrentLoan("from Item as i where i.workId in (:workIds)",[workIds:works.keySet().toList()])
-        itemCheck.each {
-            if (it != null) {
-                works[it.workId.intValue()].setHasItems(true)
-            }
-        }
+
 
     }
 }

@@ -41,11 +41,14 @@ class Item {
         worksList.each {
             works[it.id.toInteger()] = it
         }
-        def itemCheck = findAll("from Item as i where i.workId in (:workIds)",[workIds:works.keySet().toList()])
-        itemCheck.each {
-            if (it != null) {
-                works[it.workId].setHasItems(true)
-            }
+        def c = createCriteria()
+        def results = c.list {
+            'in'('workId',works.keySet().toList())
+            cacheable(true)
+
+        }
+        results.each {
+            works[it.workId].setHasItems(true)
         }
 
     }

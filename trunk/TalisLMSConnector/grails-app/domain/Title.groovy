@@ -5,6 +5,7 @@ class Title {
     static mapping = {
        table 'TITLE'
        version false
+       cache usage: 'read-only'
         columns {
             id column: 'TITLE_ID'
             workId column: 'WORK_ID'
