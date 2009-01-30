@@ -4,8 +4,7 @@ class Title {
     String title
     static mapping = {
        table 'TITLE'
-       version false
-       cache usage: 'read-only'
+       version false       
         columns {
             id column: 'TITLE_ID'
             workId column: 'WORK_ID'
@@ -27,6 +26,21 @@ class Title {
             if (it != null) {
                 works[it.workId].setTitle(it.title)
                 works[it.workId].addCollection(it.collectionId)
+            }
+        }
+    }
+
+    static def checkWorksFromCollections(collectionsList) {
+        def collectionIds = []
+        collectionsList.each { collectionIds << it.id.toInteger() }
+
+        def collIds = executeQuery("SELECT DISTINCT t.collectionId FROM Title t WHERE t.collectionId IN (:cIds) AND t.workId IS NOT NULL",
+            [cIds:collectionIds])
+        for(collection in collectionsList) {
+            if(collIds.contains(collection.id.toInteger())) {
+                collection.hasWorks = true
+            } else {
+                collection.hasWorks = false
             }
         }
     }

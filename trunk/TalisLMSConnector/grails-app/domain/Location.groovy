@@ -1,13 +1,14 @@
-class Location {
-    String LOCATION_ID
+class Location implements Serializable {
+    String locationId
     String name
-    String WITHIN_SITE_ID
+    String withinSiteId
     static mapping = {
         table 'LOCATION'
         version false
+        id composite: ['locationId','withinSiteId']
         columns {
-
-            id composite: ['LOCATION_ID','WITHIN_SITE_ID']
+            locationId column: 'LOCATION_ID'
+            withinSiteId column: 'WITHIN_SITE_ID'
             name column: 'NAME'
         }
     }

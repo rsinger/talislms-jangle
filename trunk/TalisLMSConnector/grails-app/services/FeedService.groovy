@@ -11,12 +11,14 @@ class FeedService {
                 entity = 'actors'
                 break
             case WorkCollection:
+                //setCollectionAttributes(entries)
                 entity = 'collections'
                 break
             case Item:
                 entity = 'items'
                 break
             case WorkMetadata:
+                setResourceAttributes(entries)
                 entity = 'resources'
                 break
         }
@@ -52,8 +54,11 @@ class FeedService {
 
     def setResourceAttributes(works) {
         Item.itemCheckFromWorks(works)
-        Title.getTitlesForWorks(works)
-        entityBuilder.setEntityAttributes(works)
+        Title.getTitlesForWorks(works)        
+    }
+
+    def setCollectionAttributes(collections) {
+        Title.checkWorksFromCollections(collections)
     }
 
     def addFeedAlternateFormats(feed,fmt,altFormats) {

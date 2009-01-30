@@ -9,8 +9,7 @@ class WorkCollection {
     static transients = ['hasWorks', 'uri']
     static mapping = {
        table 'COLLECTION'
-       version false
-       cache usage:'read-only'
+       version false       
         columns {
             id column: 'COLLECTION_ID'
             name column: 'NAME'
@@ -60,16 +59,15 @@ class WorkCollection {
     }
 
     static def findAllByWorkId(workId) {
-        //def collections = []
-        def c = Title.createCriteria()
-        def collections = c.list {
-            distinct('collectionId')
-            eq('workId',workId)
-            cacheable(true)
-        }
-//        Title.executeQuery("SELECT DISTINCT t.collectionId FROM Title t WHERE t.workId = ?", [workId]).each {
-//            collections << WorkCollection.get(it)
+        def collections = []
+//        def c = Title.createCriteria()
+//        def collections = c.list {
+//            distinct('collectionId')
+//            eq('workId',workId)
 //        }
+        Title.executeQuery("SELECT DISTINCT t.collectionId FROM Title t WHERE t.workId = ?", [workId]).each {
+            collections << WorkCollection.get(it)
+        }
         collections
     }
 

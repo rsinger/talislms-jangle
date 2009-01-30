@@ -21,8 +21,7 @@ class WorkMetadata {
     static transients = ['record', 'hasItems', 'collections', 'title', 'uri']
     static mapping = {
         table 'WORKS_META'
-        version false
-        cache usage:'read-only'
+        version false        
         columns {
             id column: 'WORK_ID'
             raw_data column: 'RAW_DATA'
@@ -42,11 +41,15 @@ class WorkMetadata {
         record = reader.getNext()
     }
 
+    def setHasItems(flag) {
+        hasItems = flag
+    }
+
     def toMap() {
         if(raw_data && !record) {raw_to_record()}
         if(!title) {getTitleFrom245()}
         if(title == '') {title = 'n/a'}
-        if(hasItems == null) {Item.itemCheckFromWorks(this)}
+        //if(hasItems == null) {Item.itemCheckFromWorks(this)}
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
         
         def workMap = ["id":uri,"title":title,

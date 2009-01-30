@@ -16,8 +16,7 @@ class Item {
     static transients = ['uri','workUri','available', 'location','statusMessage']
     static mapping = {
        table 'ITEM'
-       version false
-       cache usage:'read-only'
+       version false       
         columns {
             id column: 'ITEM_ID'
             barcode column: 'BARCODE'
@@ -37,18 +36,18 @@ class Item {
     }
 
     static def itemCheckFromWorks(worksList) {
-        def works = [:]
+        def workIds = []
         worksList.each {
-            works[it.id.toInteger()] = it
+            workIds << it.id.toInteger()            
         }
-        def c = createCriteria()
-        def results = c.list {
-            'in'('workId',works.keySet().toList())
-            cacheable(true)
-
-        }
-        results.each {
-            works[it.workId].setHasItems(true)
+        def workIdList = executeQuery("SELECT DISTINCT i.workId FROM Item i WHERE i.workId IN (:idList)",
+            [idList:workIds])
+        for(work in worksList) {
+            if(workIdList.contains(work.id.toInteger())) {
+                work.setHasItems(true)
+            } else {
+                work.setHasItems(false)
+            }
         }
 
     }
