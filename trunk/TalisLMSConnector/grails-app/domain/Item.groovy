@@ -82,6 +82,7 @@ class Item {
     }
 
     def donothing() {}
+    def to_atom() {}
 
     def to_dlfexpanded() {
         def writer = new StringWriter()

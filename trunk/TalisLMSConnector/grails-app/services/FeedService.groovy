@@ -53,6 +53,12 @@ class FeedService {
     }
 
     def setResourceAttributes(works) {
+        // Ugly hack to weed out possible works that have no MARC record.
+        def cleanWorks = []
+        works.each {
+            if(it.raw_data) { cleanWorks << it}
+        }
+        works = cleanWorks
         Item.itemCheckFromWorks(works)
         Title.getTitlesForWorks(works)        
     }

@@ -67,9 +67,18 @@ class ResourcesController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if(params.filter == 'opac') {
-            works = WorkMetadata.findAllByOpacSuppressNotEqual(true,[max:grailsApplication.config.jangle.connector.global_options.maximum_results,sort:"modified",order:"desc",
-                offset:params.offset.toInteger()])
-            feed.setTotalResults(Work.count())
+
+            def c = WorkMetadata.createCriteria()
+            works = c.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                    offset:feed.offset,sort:"modified",order:"desc") {
+                    eq('opacSuppress','F')
+                    }
+            c = WorkMetadata.createCriteria()
+            def count = c.get {
+                projections {count('id')}
+                eq('opacSuppress','F')                
+            }
+            feed.setTotalResults(count)
 
             feedService.buildFeed(feed,works,params)
 //        requestService.setResourceAttributes(works)
@@ -85,6 +94,7 @@ class ResourcesController {
             render(contentType:requestService.contentType(request.getHeader('accept')),
                 text:feed.toMap().encodeAsJSON())
         }
+        
 
     }
 }

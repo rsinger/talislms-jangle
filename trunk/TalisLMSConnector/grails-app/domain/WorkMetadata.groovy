@@ -10,7 +10,8 @@ import java.text.SimpleDateFormat
 class WorkMetadata {
     Byte[] raw_data
     Record record
-    Boolean opacSuppress
+    String opacSuppress
+    String indexSuppress
     String controlNumber
     Timestamp modified
     Boolean hasItems
@@ -27,18 +28,23 @@ class WorkMetadata {
             raw_data column: 'RAW_DATA'
             controlNumber column: 'TALIS_CONTROL_NUMBER'
             opacSuppress column: 'SUPPRESS_FROM_OPAC'
+            indexSuppress column: 'SUPPRESS_FROM_INDEX'
             modified column: 'MODIFIED_DATE'
         }
     }
-    
+    static constraints = {
+        raw_data(nullable:true)
+    }
 
     def setEntityUri(base) {
         uri = "${base}/resources/${id}"
     }
     def raw_to_record() {
-        def bis = new ByteArrayInputStream(raw_data)
-        def reader = new RecordReader(bis)
-        record = reader.getNext()
+        if(raw_data) {
+            def bis = new ByteArrayInputStream(raw_data)
+            def reader = new RecordReader(bis)
+            record = reader.getNext()
+        }
     }
 
     def setHasItems(flag) {
@@ -71,10 +77,15 @@ class WorkMetadata {
     def doNothing() {}
 
     def to_marc() {
-        return record.ToISO2709().encodeBase64().toString()
+        if(record) {
+            return record.ToISO2709().encodeBase64().toString()
+        } else {
+            return ''
+        }
     }
 
     def to_marcxml() {
+        if(record) { return ''}
         def strWriter = new StringWriter()
         def serializer = new org.apache.xml.serialize.XMLSerializer()
         serializer.setOutputCharStream(strWriter)
