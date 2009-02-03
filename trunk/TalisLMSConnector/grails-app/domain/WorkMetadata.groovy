@@ -85,13 +85,13 @@ class WorkMetadata {
     }
 
     def to_marcxml() {
-        if(record) { return ''}
+        if(!record) { return ''}
         def strWriter = new StringWriter()
         def serializer = new org.apache.xml.serialize.XMLSerializer()
         serializer.setOutputCharStream(strWriter)
         serializer.serialize(record.toMarcXml())
         def marcList = strWriter.toString().split(/\n/)
-        return marcList[1..(marcList.size()-1)][0].replaceAll(
+        return marcList[1..(marcList.size()-1)].join("\n").replaceAll(
             /\<record\>/,'<record xmlns="http://www.loc.gov/MARC21/slim">')
 
     }
