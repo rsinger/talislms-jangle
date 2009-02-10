@@ -4,6 +4,7 @@ class FeedService {
     boolean transactional = true
     def connectorBase
     def statusMap = [:]
+    def locations = [:]
     def buildFeed(feed,entries,params) {
         def entity
         switch(entries[0].getClass()) {
@@ -15,6 +16,7 @@ class FeedService {
                 entity = 'collections'
                 break
             case Item:
+                setItemAttributes(entries)
                 entity = 'items'
                 break
             case WorkMetadata:
@@ -26,8 +28,7 @@ class FeedService {
         if(config.entities[entity].record_types.size() > 1) {
             addFeedAlternateFormats(feed,params.format,config.entities[entity].record_types)
         }
-        for(entry in entries) {
-            if(entity == 'items') { entry.setStatusMessage(getStatusMessage(6,entry.status_id))}
+        for(entry in entries) {            
             entry.setEntityUri(connectorBase)
             def entryMap = entry.toMap()
             def method_name
@@ -61,6 +62,49 @@ class FeedService {
         works = cleanWorks
         Item.itemCheckFromWorks(works)
         Title.getTitlesForWorks(works)        
+    }
+
+    def setItemAttributes(items) {
+        if(!locations) {locations = [:]}
+        def locs = Location.executeQuery("SELECT locationId, name, withinSiteId FROM Location")
+        locs.each {
+            if(!locations[it[0].trim()]) locations[it[0].trim()] = [:]
+
+            locations[it[0].trim()] = ["locationId":it[0],"name":it[1],"withinSiteId":it[2]]
+        }
+        locations.each { siteId, site ->
+            if(site["withinSiteId"] && site["withinSiteId"].trim() != '') {
+                println site["withinSiteId"].trim()
+                site["name"] = locations[site["withinSiteId"].trim()]["name"]+"/"+site["name"]
+            }
+        }
+        def allIds = []
+        def loanedItemIds = []
+        def orderedItemIds = []
+        def serialItemIds = []
+        Loan.findCurrentLoansFromItemList(items)
+        items.each {
+            if(it.onLoan) {
+                it.setStatusMessage("On Loan")
+            } else {
+                it.setStatusMessage(getStatusMessage(6,it.status_id))
+            }
+            allIds << it.id
+
+            if(it.site && locations[it.site.trim()]) {                
+                it.setItemLocation(locations[it.site.trim()])                
+            }
+            if(it.status_id != 5) {
+                if(it.status_id == 1 || it.status_id == 2) {
+                    orderedItemIds << it.id
+                } else {
+                    loanedItemIds << it.id
+                }
+            }
+        }
+
+
+
     }
 
     def setCollectionAttributes(collections) {

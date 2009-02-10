@@ -40,11 +40,13 @@ class ResourcesController {
         def works = WorkMetadata.getAll(requestService.translateId(params.id))
         def related = []
         works.each {
+            def results
             if(params.relationship == "items") {
-                related = it.getItems(params.offset.toInteger())
+                results = it.getItems(params.offset.toInteger())
             } else {
-                related = it.getCollections(params.offset.toInteger())
+                results = it.getCollections(params.offset.toInteger())
             }
+            if(results.size() > 0) {related.addAll(results)}
         }
 
         feed.setTotalResults(related.size())

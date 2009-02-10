@@ -13,7 +13,14 @@ class Item {
     String workUri
     Boolean available
     String statusMessage
-    static transients = ['uri','workUri','available', 'location','statusMessage']
+    Map location
+    Timestamp dateAvailable
+    Integer borrowerId
+    Integer classId
+    Boolean onLoan = false
+    String suffix
+    static transients = ['uri','workUri','available', 'location','statusMessage',
+    'dateAvailable', 'borrowerId', 'onLoan']
     static mapping = {
        table 'ITEM'
        version false       
@@ -25,6 +32,8 @@ class Item {
             site column: 'ACTIVE_SITE_ID'
             modified column: 'EDIT_DATE'
             created column: 'CREATE_DATE'
+            classId column: 'CLASS_ID'
+            suffix column: 'SUFFIX'
         }
 
     }
@@ -33,6 +42,8 @@ class Item {
     static constraints = {
         barcode(nullable:true)
         modified(nullable:true)
+        classId(nullable:true)
+        suffix(nullable:true)
     }
 
     static def itemCheckFromWorks(worksList) {
@@ -85,18 +96,39 @@ class Item {
     def to_atom() {}
 
     def to_dlfexpanded() {
+        def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
         def writer = new StringWriter()
         def xml = new MarkupBuilder(writer)
         xml.record(xmlns:'http://diglib.org/ilsdi/1.1') {
             bibliographic(id:workUri)
-            simpleavailability {
-                identifier(uri)
-                if(available) {
-                    availabilitystatus('available')
-                } else {
-                    availabilitystatus('not available')
+            items {
+                item(id:uri) {
+                    simpleavailability {
+                        identifier(uri)
+                        if(available) {
+                            availabilitystatus('available')
+                        } else {
+                            availabilitystatus('not available')
+                        }
+                        def locString = ''
+
+                        if(location) {                            
+                            locString = 'Location: '+location["name"]
+                        }
+                        if(classId) {
+                            def classification = Classification.get(classId)
+                            if(classification) {
+                                def shelfmark = classification.classNumber
+                                if(suffix) {shelfmark = shelfmark + ' ' + suffix}
+                                if(locString.size() > 0) { locString = locString + ' - '}
+                                locString = locString + 'Shelfmark: '+shelfmark
+                            }
+                        }
+                        location(locString)
+                        if(statusMessage) availabilitymsg(statusMessage)
+                        if(dateAvailable) {dateavailable(dateFormatter.format(dateAvailable))}
+                    }
                 }
-                if(statusMessage) availabilitymsg(statusMessage)
             }
 
 
@@ -113,17 +145,24 @@ class Item {
             default:
             available = false
         }
+        if(onLoan) { available = false}
 
     }
 
-    def setStatusMessage(mesg) {
-        statusMessage = mesg
+    def setItemStatusMessage(mesg) {        
+        if(!onLoan)
+        {statusMessage = mesg}
+        else
+        {statusMessage = "On Loan"}
     }
 
     def getLocation() {
-
+        return location
     }
 
+    def setItemLocation(locMap) {
+        location = locMap        
+    }
     def getWork() {
         return WorkMetadata.get(workId)
     }

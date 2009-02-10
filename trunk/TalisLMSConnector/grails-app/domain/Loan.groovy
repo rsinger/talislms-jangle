@@ -2,7 +2,7 @@ import java.sql.Timestamp
 class Loan {
     Integer itemId
     Integer borrowerId
-    Boolean currentLoan
+    String currentLoan
     Timestamp created
     Timestamp duedate
     Integer state
@@ -32,4 +32,23 @@ class Loan {
 
 
     }
+
+    static def findCurrentLoansFromItemList(itemsList) {
+        def items = [:]
+        itemsList.each {
+            items[it.id.toInteger()] = it
+        }
+        def c = Loan.createCriteria()        
+        def loans = c.list {
+            "in"("itemId",items.keySet().toList())
+            and{eq("currentLoan",'T')}
+        }
+        for(loan in loans) {
+            items[loan.itemId].onLoan = true
+            items[loan.itemId].dateAvailable = loan.duedate
+            items[loan.itemId].borrowerId = loan.borrowerId
+        }
+
+    }
+
 }

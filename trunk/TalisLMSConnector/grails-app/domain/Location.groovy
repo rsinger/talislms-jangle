@@ -12,4 +12,7 @@ class Location implements Serializable {
             name column: 'NAME'
         }
     }
+    static constraints = {
+        withinSiteId(nullable:true)
+    }
 }
