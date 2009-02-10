@@ -69,4 +69,5 @@ log4j {
 }
 import org.ho.yaml.Yaml
 jangle.connector = Yaml.load(new File('config.yml'))
+jangle.core = Yaml.load(new File('core-config.yml'))
 

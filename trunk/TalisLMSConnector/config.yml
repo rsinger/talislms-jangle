@@ -1,10 +1,10 @@
 ## YAML Template.
 
 global_options:
-    maximum_results: 100
-    url_template: "http://prism.talis.com/demo/renderitem.php?item={id}"
+    maximum_results: 100    
     service_name: alto
-    servlet_path: /TalisLMSConnector
+    servlet_path: /jangle
+    connector_path: /jangle/connector
 
 record_types:
     dlfexpanded:

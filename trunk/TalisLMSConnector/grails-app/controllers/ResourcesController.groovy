@@ -17,7 +17,7 @@ class ResourcesController {
         } else {
             works = WorkMetadata.getAll(requestService.translateId(params.id))
             feed.setTotalResults(works.size)
-        }
+        }        
         feedService.buildFeed(feed,works,params)
 //        requestService.setResourceAttributes(works)
 
