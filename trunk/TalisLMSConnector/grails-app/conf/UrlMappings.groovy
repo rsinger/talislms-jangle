@@ -6,6 +6,7 @@ class UrlMappings {
       "/connector/$controller/$id/$relationship"(action:"relationship")
       "/connector/$controller/$id/$relationship/-/$filter"(action:"relationshipFilter")
       "/connector/$controller/$id?"(action:"index")
+      "/connector/$path**"(controller:"services",action:"notFound")
       "/$connector_name/$path**"(controller:"core",action = [GET:"retrieve"]
 )
 
@@ -15,6 +16,6 @@ class UrlMappings {
 			 // apply constraints here
 		  }
 	  }
-	  "500"(view:'/error')
+	  //"500"(view:'/error')
 	}
 }

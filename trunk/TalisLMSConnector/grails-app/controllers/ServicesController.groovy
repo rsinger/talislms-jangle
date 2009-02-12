@@ -7,4 +7,9 @@ class ServicesController {
         svc.buildFromConfig(grailsApplication.config.jangle.connector)
         render(contentType:"application/json",text:svc.toMap().encodeAsJSON())
     }
+
+    def notFound = {
+        response.status = 404 //Not Found
+        render "${request.forwardURI} not found."
+    }
 }
