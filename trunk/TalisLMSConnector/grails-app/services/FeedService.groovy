@@ -28,6 +28,9 @@ class FeedService {
         if(config.entities[entity].record_types.size() > 1) {
             addFeedAlternateFormats(feed,params.format,config.entities[entity].record_types)
         }
+        if(config.record_types[params.format].stylesheets && config.record_types[params.format].stylesheets.feed && config.record_types[params.format].stylesheets.feed.entities && config.record_types[params.format].stylesheets.feed.entities.contains(entity)) {
+           feed.addStylesheet(config.record_types[params.format].stylesheets.feed.uri)
+        }
         for(entry in entries) {            
             entry.setEntityUri(connectorBase)
             def entryMap = entry.toMap()
