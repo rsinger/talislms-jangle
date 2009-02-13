@@ -13,10 +13,11 @@ class ServiceResponse {
     String version = '1.0'
     String title = 'Talis OPAC'
     String request
+    String connectorBase
     private String basePath
     Date time = new java.util.Date()
     Map entities = [:]
-    List categories
+    Map categories
 
     def getBasePath() {
         //if(!basePath) {
@@ -24,6 +25,10 @@ class ServiceResponse {
             basePath = m[0][1]
         //}
         return basePath
+    }
+
+    def setConnectorBase(uri) {
+        connectorBase = uri ? uri : ''
     }
 
     def buildFromConfig(conf) {
@@ -61,12 +66,12 @@ class ServiceResponse {
             entities[entity_key] = eMap
         }
         if(conf.categories) {
-            categories = []
+            categories = [:]
             conf.categories.each {term, vals ->
-                def catMap = ['term':term]
+                def catMap = [:]
                 if(vals.scheme) { catMap['scheme'] = vals.scheme}
                 if(vals.label) { catMap['label'] = vals.label}
-                categories << catMap
+                categories[term] = catMap
 
             }
         }

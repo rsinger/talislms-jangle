@@ -1,6 +1,6 @@
 class ConnectorResponse {
     Integer status
     String message
-    String contents
+    net.sf.json.JSONObject contents
 }
 

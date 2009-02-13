@@ -7,18 +7,25 @@ import javax.xml.transform.stream.StreamSource
 
 class CoreService {
     def config = ConfigurationHolder.config.jangle.core
+    def services
+    def stylesheets = [:]
+    def entityMap = ["actors":"Actor","collections":"Collection","items":"Item","resources":"Resource"]
+
     boolean transactional = true
     def getRequest(connector, resource, params) {
+        if(!services) {gatherServices()}
         def connector_response = new ConnectorResponse()
         def connector_uri
+        def path = ''
         try {
-            connector_uri = new URI(config['connectors'][connector]['url']+resource)
+            connector_uri = new URI(config['connectors'][connector]['url'])
+            path = services[connector].entities[entityMap[resource.split("/")[0]]].path
         } catch(e) {
             connector_response.status = 404
             connector_response.message = "Connector not found:  ${connector}"
             return connector_response
         }
-        //
+        //        
         def http = new HTTPBuilder(connector_uri.scheme+'://'+connector_uri.getAuthority())
         def query_vars = [:]
         params.each {key, val->
@@ -27,7 +34,8 @@ class CoreService {
             }
         }
         try {
-        connector_response.contents = http.get(path:connector_uri.path,contentType:JSON, params:query_vars,headers:["X-CONNECTOR-BASE":config['base_uri']+connector])
+            connector_response.contents = http.get(path:path,contentType:JSON, params:query_vars,headers:["X-CONNECTOR-BASE":config['base_uri']+connector])
+            
         } catch(e) {
             switch(e.getClass()) {
                 case org.apache.http.client.HttpResponseException:
@@ -44,7 +52,9 @@ class CoreService {
 
         connector_response.status = 200
         connector_response.message = "OK"
-        if(!connector_response.contents.title) { connector_response.contents.title = connector}
+        if(!connector_response.contents.title) { 
+            connector_response.contents['title'] = connector
+        }
         return connector_response
     }
 
@@ -58,7 +68,7 @@ class CoreService {
             contentType = 'application/atom+xml'
             break
             case 'service':
-            contentType = 'application/atomservice+xml'
+            contentType = 'application/atomsvc+xml'
             break
             case 'explain':
             contentType = 'application/opensearchdescription+xml'
@@ -66,14 +76,24 @@ class CoreService {
         return contentType
     }
 
-    def applyXslt(doc, xsltUri) {
-        println doc.getClass()
+    def applyXslt(doc, xsltUri) {        
         def xslt = new URL(xsltUri)
         def output = new StringWriter()
         def factory = TransformerFactory.newInstance()
         def transformer = factory.newTransformer(new StreamSource(new StringReader(xslt.text)))
-        transformer.transform(new StreamSource(new StringReader(doc)), new StreamResult(output))
-        println output
+        transformer.transform(new StreamSource(new StringReader(doc)), new StreamResult(output))        
         return output.toString()
+    }
+
+    def gatherServices() {
+        services = [:]        
+        config.connectors.each {name,conf->
+            def uri = new URI(conf.url+"services")
+            def http = new HTTPBuilder(uri.scheme+'://'+uri.getAuthority())
+            services[name] = http.get(path:uri.path,contentType:JSON, headers:["X-CONNECTOR-BASE":config.base_uri+name])
+            services[name].entities.each {entity, vals ->
+                vals['uri'] = config.base_uri + name + "/" + entity.toLowerCase()+'s'
+            }
+        }
     }
 }

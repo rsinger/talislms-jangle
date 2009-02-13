@@ -26,6 +26,21 @@ class FeedTagLib {
         out << body() << output
 
     }
+
+    def categoryBuilder = {attrs, body ->
+        def tag = "<atom:category term='${attrs.category}'"
+        if(attrs.categories && attrs.categories[attrs.category]) {
+            if(attrs.categories[attrs.category].scheme) {
+                tag = "${tag} scheme='${attrs.categories[attrs.category].scheme}'"
+            }
+            if(attrs.categories[attrs.category].label) {
+                tag = "${tag} label='${attrs.categories[attrs.category].label}'"
+            }
+
+        }
+        out << tag + " />"
+
+    }
     private static final String AMP = "&amp;"
     private static final String LT = "&lt;"
     private static final String GT = "&gt;"
