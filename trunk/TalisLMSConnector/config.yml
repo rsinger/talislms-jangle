@@ -5,6 +5,8 @@ global_options:
     service_name: alto
     servlet_path: /jangle
     connector_path: /jangle/connector
+    administrator_accounts:
+      admin: telephone
 
 record_types:
     dlfexpanded:

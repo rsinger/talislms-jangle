@@ -4,6 +4,7 @@ class Borrower {
     String barcode
     String surname
     String first_names
+    String pin
     Date birth_date
     Date registration_date
     Timestamp created
@@ -24,7 +25,12 @@ class Borrower {
             created column: 'CREATE_DATE'
             modified column: 'EDIT_DATE'
             expiration column: 'EXPIRY_DATE'
+            pin column: 'PIN'
         }
+    }
+
+    static constraints = {
+        pin(nullable:true)
     }
 
     def setEntityUri(base) {
