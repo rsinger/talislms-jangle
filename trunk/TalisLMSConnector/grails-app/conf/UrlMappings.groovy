@@ -6,8 +6,9 @@ class UrlMappings {
       "/connector/$controller/-/$filter/"(action:"filter")
       "/connector/$controller/$id/$relationship"(action:"relationship")
       "/connector/$controller/$id/$relationship/-/$filter"(action:"relationshipFilter")
+      "/connector/$controller/status"(action:"status")
       "/connector/$controller/$id?"(action:"index")
-      "/connector/$path**"(controller:"services",action:"notFound")      
+      //"/connector/$path**"(controller:"services",action:"notFound")      
       "/$connector_name/$path**"(controller:"core",action = [GET:"retrieve"]
 )
 

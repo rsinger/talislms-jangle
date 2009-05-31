@@ -57,7 +57,7 @@ log4j {
             codehaus.groovy.grails.web.pages="error" //  GSP
             codehaus.groovy.grails.web.sitemesh="error" //  layouts
             codehaus.groovy.grails."web.mapping.filter"="error" // URL mapping
-            codehaus.groovy.grails."web.mapping"="error" // URL mapping
+            codehaus.groovy.grails."web.mapping"="info" // URL mapping
             codehaus.groovy.grails.commons="info" // core / classloading
             codehaus.groovy.grails.plugins="error" // plugins
             codehaus.groovy.grails.orm.hibernate="error" // hibernate integration
@@ -68,8 +68,8 @@ log4j {
     additivity.StackTrace=false
 }
 import org.ho.yaml.Yaml
-jangle.connector = Yaml.load(new File('config.yml'))
-jangle.core = Yaml.load(new File('core-config.yml'))
+jangle.connector = Yaml.load(new File("${userHome}/.grails/${appName}/connector-config.yml"))
+jangle.core = Yaml.load(new File("${userHome}/.grails/${appName}/core-config.yml"))
 
 
 

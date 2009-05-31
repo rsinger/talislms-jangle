@@ -58,13 +58,15 @@ class FeedService {
 
     def setResourceAttributes(works) {
         // Ugly hack to weed out possible works that have no MARC record.
-        def cleanWorks = []
+        /* def cleanWorks = []
         works.each {
             if(it.raw_data) { cleanWorks << it}
         }
-        works = cleanWorks
-        Item.itemCheckFromWorks(works)
-        Title.getTitlesForWorks(works)        
+        if (cleanWorks.size > 0) {
+            works = cleanWorks */
+            Item.itemCheckFromWorks(works)
+            Title.getTitlesForWorks(works)        
+        //}
     }
 
     def setItemAttributes(items) {
@@ -77,7 +79,6 @@ class FeedService {
         }
         locations.each { siteId, site ->
             if(site["withinSiteId"] && site["withinSiteId"].trim() != '') {
-                println site["withinSiteId"].trim()
                 site["name"] = locations[site["withinSiteId"].trim()]["name"]+"/"+site["name"]
             }
         }

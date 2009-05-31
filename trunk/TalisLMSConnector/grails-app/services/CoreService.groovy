@@ -10,7 +10,7 @@ class CoreService {
     def services
     def stylesheets = [:]
     def entityMap = ["actors":"Actor","collections":"Collection","items":"Item","resources":"Resource"]
-
+    
     boolean transactional = true
     def getRequest(connector, resource, params) {
         if(!services) {gatherServices()}
@@ -18,8 +18,13 @@ class CoreService {
         def connector_uri
         def path = ''
         try {
-            connector_uri = new URI(config['connectors'][connector]['url'])
-            path = services[connector].entities[entityMap[resource.split("/")[0]]].path
+            if (resource != 'services' && resource != 'services/') {
+                path = services[connector].entities[entityMap[resource.split("/")[0]]].path
+            } else {
+                path = '/services/'
+            }
+            connector_uri = new URI(config['connectors'][connector]['url']+path)
+            
         } catch(e) {
             connector_response.status = 404
             connector_response.message = "Connector not found:  ${connector}"
@@ -34,7 +39,7 @@ class CoreService {
             }
         }
         try {
-            connector_response.contents = http.get(path:path,contentType:JSON, params:query_vars,headers:["X-CONNECTOR-BASE":config['base_uri']+connector])
+            connector_response.contents = http.get(path:connector_uri.path,contentType:JSON, params:query_vars,headers:["X-CONNECTOR-BASE":config['base_uri']+connector])
             
         } catch(e) {
             switch(e.getClass()) {
@@ -88,7 +93,7 @@ class CoreService {
     def gatherServices() {
         services = [:]        
         config.connectors.each {name,conf->
-            def uri = new URI(conf.url+"services")
+            def uri = new URI(conf.url+"/services")
             def http = new HTTPBuilder(uri.scheme+'://'+uri.getAuthority())
             services[name] = http.get(path:uri.path,contentType:JSON, headers:["X-CONNECTOR-BASE":config.base_uri+name])
             services[name].entities.each {entity, vals ->

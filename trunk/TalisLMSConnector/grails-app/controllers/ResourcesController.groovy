@@ -11,9 +11,22 @@ class ResourcesController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if(!params.id) {
-            works = WorkMetadata.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,sort:"modified",order:"desc",
-                offset:params.offset.toInteger())
-            feed.setTotalResults(Work.count())
+            if (feed.offset > grailsApplication.config.jangle.connector.global_options.maximum_results) {
+                def worklist = WorkMetadata.search("*:*", sort:"modified", order:"desc",
+                    max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                    offset:params.offset.toInteger())
+                    def ids = []
+                    worklist.results.each {
+                        ids << it.id
+                    }
+                    //works = WorkMetadata.getAll(ids)
+                    works = worklist.results
+                    feed.setTotalResults(worklist.total)
+            } else {
+                works = WorkMetadata.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                        offset:feed.offset,sort:"modified",order:"desc")
+                feed.setTotalResults(WorkMetadata.count())
+            }
         } else {
             works = WorkMetadata.getAll(requestService.translateId(params.id))
             feed.setTotalResults(works.size)
@@ -26,8 +39,13 @@ class ResourcesController {
           response.status = 404 //Not Found
           render "${request.forwardURI} not found."
         } else {
-            render(contentType:requestService.contentType(request.getHeader('accept')),
+            render(contentType:'application/json',
                 text:feed.toMap().encodeAsJSON())
+        }
+        
+        if (feed.offset < grailsApplication.config.jangle.connector.global_options.maximum_results) {
+            def updates = WorkMetadata.syncIndex()
+            print updates.size
         }
 
     }
@@ -53,7 +71,7 @@ class ResourcesController {
         feed.offset = params.offset.toInteger()
         if(related.size() > 0) {
             feedService.buildFeed(feed,related,params)
-            render(contentType:requestService.contentType(request.getHeader('accept')),
+            render(contentType:'application/json',
                 text:feed.toMap().encodeAsJSON())
         } else {
 
@@ -69,18 +87,30 @@ class ResourcesController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if(params.filter == 'opac') {
-
-            def c = WorkMetadata.createCriteria()
-            works = c.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
-                    offset:feed.offset,sort:"modified",order:"desc") {
-                    eq('opacSuppress','F')
+            if (feed.offset > grailsApplication.config.jangle.connector.global_options.maximum_results) {
+                def worklist = WorkMetadata.search("opacSuppress:F", sort:"modified", order:"desc",
+                    max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                    offset:params.offset.toInteger())
+                    def ids = []
+                    worklist.results.each {
+                        ids << it.id
                     }
-            c = WorkMetadata.createCriteria()
-            def count = c.get {
-                projections {count('id')}
-                eq('opacSuppress','F')                
-            }
-            feed.setTotalResults(count)
+                    //works = WorkMetadata.getAll(ids)
+                    works = worklist.results
+                    feed.setTotalResults(worklist.total)
+            } else {
+                def c = WorkMetadata.createCriteria()
+                works = c.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                        offset:feed.offset,sort:"modified",order:"desc") {
+                        eq('opacSuppress','F')
+                        }
+                c = WorkMetadata.createCriteria()
+                def count = c.get {
+                    projections {count('id')}
+                    eq('opacSuppress','F')                
+                }
+                feed.setTotalResults(count)
+            }            
 
             feedService.buildFeed(feed,works,params)
 //        requestService.setResourceAttributes(works)
@@ -98,5 +128,10 @@ class ResourcesController {
         }
         
 
+    }
+
+    def status = {
+        [workSearch: WorkMetadata.countHits('*:*'),
+        workCount: WorkMetadata.count()]
     }
 }

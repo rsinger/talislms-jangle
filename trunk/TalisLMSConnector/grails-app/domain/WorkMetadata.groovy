@@ -19,6 +19,10 @@ class WorkMetadata {
     String title
     String uri
 
+    //static searchable = [only: ['modified', 'title', 'opacSuppress']]
+    static searchable = true
+
+
     static transients = ['record', 'hasItems', 'collections', 'title', 'uri']
     static mapping = {
         table 'WORKS_META'
@@ -41,9 +45,13 @@ class WorkMetadata {
     }
     def raw_to_record() {
         if(raw_data) {
-            def bis = new ByteArrayInputStream(raw_data)
-            def reader = new RecordReader(bis)
-            record = reader.getNext()
+            try {
+                def bis = new ByteArrayInputStream(raw_data)
+                def reader = new RecordReader(bis)
+                record = reader.getNext()
+            } catch(e) {
+                record = null
+            }
         }
     }
 
@@ -53,12 +61,11 @@ class WorkMetadata {
 
     def toMap() {
         if(raw_data && !record) {raw_to_record()}
-        if(!title) {getTitleFrom245()}
-        if(title == '') {title = 'n/a'}
+
         //if(hasItems == null) {Item.itemCheckFromWorks(this)}
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
         
-        def workMap = ["id":uri,"title":title,
+        def workMap = ["id":uri,"title":getTitle(),
         "updated":dateFormatter.format(modified)]
         def relationships = [:]
         if(collections.size() > 0) {
@@ -69,7 +76,7 @@ class WorkMetadata {
             relationships["http://jangle.org/vocab/Entities#Item"] =
                 "${uri}/items/"
         }
-        if(!opacSuppress) { workMap["categories"] = ['opac']}
+        if(opacSuppress == 'F') { workMap["categories"] = ['opac']}
         workMap["relationships"] = relationships
         return workMap
     }
@@ -111,15 +118,42 @@ class WorkMetadata {
             title = ''
             return
         }
-        title = titleField[0].getSubfields('a')[0].getContent('utf-8')
+        return titleField[0].getSubfields('a')[0].getContent('utf-8')
 
     }
     def getTitleFromTitle() {
         def titles = Title.findAllByWorkId(id)
+        def t = null
         titles.each {
-            title = it.title
+            t = it.title
             this.addCollection(it.collectionId)
         }
+        return t
+    }
+    
+    def getTitleFromWork() {
+        def work = Work.get(id)
+        if (work && work.title) {
+            return (work.title =~ /^\. - /).replaceFirst('')
+        }
+    }
+    
+    def getTitle() {
+        if (title) { return title }
+        def t = null
+        try {
+            t = getTitleFrom245()
+        } catch(e) {
+            t = null
+        }        
+        if (!t || t == '') {
+            t = getTitleFromTitle()
+        }
+        if (!t || t == '') {
+            t = getTitleFromWork()
+        }
+        if(!t || t == '') {t = 'n/a'}     
+        return t   
     }
 
     def setAlternateFormats(workMap, format) {
@@ -156,6 +190,19 @@ class WorkMetadata {
         def workIds = WorkMetadata.executeQuery(
             "SELECT w.id FROM WorkMetadata w, Title t WHERE w.id = t.workId AND t.collectionId = 1 ORDER BY w.modified DESC", [max:100,offset:offset])
         return WorkMetadata.getAll(workIds)
+    }
+    
+    static def syncIndex() {
+        def lastIndexed = search("*:*", sort:"modified", order:"desc", max:1)
+        if (lastIndexed.total == 0) {
+            return []
+        }
+        def newWorks = findAllByModifiedGreaterThanEquals(lastIndexed.results[0].modified)
+        if (newWorks.size == 1 && newWorks[0].id == lastIndexed.results[0].id) {
+            return []
+        }
+        index(newWorks)
+        return newWorks
     }
 
 }
