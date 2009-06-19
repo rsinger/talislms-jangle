@@ -92,9 +92,9 @@ class Item {
         itemMap['relationships'] = relationships
         if(via) {
             if(via['resources']) {
-                if(!itemMap['link']) { itemMap['link'] = [:]}
-                if(!itemMap['link']['via']) { itemMap['link']['via'] = [] }
-                itemMap['link']['via'] << ['href':workUri,'type':'application/atom+xml']
+                if(!itemMap['links']) { itemMap['links'] = [:]}
+                if(!itemMap['links']['via']) { itemMap['links']['via'] = [] }
+                itemMap['links']['via'] << ['href':workUri,'type':'application/atom+xml']
             }
         }
 

@@ -35,10 +35,10 @@ class WorkCollection {
         }
         if(via) {
             if(via['resources']) {
-                if(!collMap['link']) { collMap['link'] = [:]}
-                if(!collMap['link']['via']) { collMap['link']['via'] = [] }
+                if(!collMap['links']) { collMap['links'] = [:]}
+                if(!collMap['links']['via']) { collMap['links']['via'] = [] }
                 via['resources'].each {
-                    collMap['link']['via'] << ['href':"${baseUri}/collections/${it}",'type':'application/atom+xml']
+                    collMap['links']['via'] << ['href':"${baseUri}/collections/${it}",'type':'application/atom+xml']
                 }
             }
         }

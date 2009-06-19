@@ -83,9 +83,9 @@ class WorkMetadata {
         }
         if(via){
             via.keySet().each() {key ->
-                if(!workMap['link']) { workMap['link'] = ['via':[]]}
+                if(!workMap['links']) { workMap['links'] = ['via':[]]}
                 via[key].each() {val ->
-                    workMap['link']['via'] << ['href':"${baseUri}/${key}/${val}",'type':'application/atom+xml']
+                    workMap['links']['via'] << ['href':"${baseUri}/${key}/${val}",'type':'application/atom+xml']
                 }
             }
         }
