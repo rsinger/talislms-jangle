@@ -6,7 +6,9 @@ class WorkCollection {
     String collectionCode    
     String uri
     Boolean hasWorks = false
-    static transients = ['hasWorks', 'uri']
+    String baseUri
+    Map via = [:]
+    static transients = ['hasWorks', 'uri', 'via', 'baseUri']
     static mapping = {
        table 'COLLECTION'
        version false       
@@ -19,16 +21,26 @@ class WorkCollection {
     }
 
     def setEntityUri(base) {
+        baseUri = base
         uri = "${base}/collections/${id}"
     }
     
     def toMap() {        
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
         def collMap = ["id":uri,"title":name, "updated":dateFormatter.format(new Date())]        
-        checkHasWorks()
+        //checkHasWorks()
         if(hasWorks) {
             collMap["relationships"] = ["http://jangle.org/vocab/Entities#Resource":
             "${uri}/resources/"]
+        }
+        if(via) {
+            if(via['resources']) {
+                if(!collMap['link']) { collMap['link'] = [:]}
+                if(!collMap['link']['via']) { collMap['link']['via'] = [] }
+                via['resources'].each {
+                    collMap['link']['via'] << ['href':"${baseUri}/collections/${it}",'type':'application/atom+xml']
+                }
+            }
         }
 
         return collMap
@@ -70,11 +82,24 @@ class WorkCollection {
         }
         collections
     }
+    
+    static def getAllByWorkIds(workIds, offset, max) {
+        def collections = []
+
+        Title.executeQuery("SELECT DISTINCT t.collectionId FROM Title t WHERE t.workId in (:workIds)", [workIds:workIds], [offset:offset, max:max]).each {
+            collections << WorkCollection.get(it)
+        }
+        collections
+    }    
 
     def getWorks(offset=0) {
         def works = WorkMetadata.findByCollectionId(id,offset)
         return works
 
+    }
+    
+    def setVia(entity, ids) {
+        via[entity] = ids
     }
 
 }

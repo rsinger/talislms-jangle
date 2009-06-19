@@ -1,5 +1,5 @@
 class Title {
-    Integer collectionId
+    Long collectionId
     Long workId
     String title
     static mapping = {
@@ -32,12 +32,12 @@ class Title {
 
     static def checkWorksFromCollections(collectionsList) {
         def collectionIds = []
-        collectionsList.each { collectionIds << it.id.toInteger() }
+        collectionsList.each { collectionIds << it.id }
 
         def collIds = executeQuery("SELECT DISTINCT t.collectionId FROM Title t WHERE t.collectionId IN (:cIds) AND t.workId IS NOT NULL",
             [cIds:collectionIds])
         for(collection in collectionsList) {
-            if(collIds.contains(collection.id.toInteger())) {
+            if(collIds.contains(collection.id)) {
                 collection.hasWorks = true
             } else {
                 collection.hasWorks = false

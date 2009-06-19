@@ -1,6 +1,0 @@
-base_uri:  http://jangle.ross-singers-computer.local/
-connectors:
-  alto:
-    url: http://localhost:8080/jangle/connector
-  openbiblio:
-    url: http://connector.jangle.org

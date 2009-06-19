@@ -11,19 +11,19 @@ class ResourcesController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if(!params.id) {
-            if (feed.offset > grailsApplication.config.jangle.connector.global_options.maximum_results) {
+            if (feed.offset > grailsApplication.config.jangle.connector.maxResults) {
                 def worklist = WorkMetadata.search("*:*", sort:"modified", order:"desc",
-                    max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                    max:grailsApplication.config.jangle.connector.maxResults,
                     offset:params.offset.toInteger())
-                    def ids = []
-                    worklist.results.each {
-                        ids << it.id
-                    }
+                    //def ids = []
+                    //worklist.results.each {
+                    //    ids << it.id
+                    //}
                     //works = WorkMetadata.getAll(ids)
                     works = worklist.results
                     feed.setTotalResults(worklist.total)
             } else {
-                works = WorkMetadata.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                works = WorkMetadata.list(max:grailsApplication.config.jangle.connector.maxResults,
                         offset:feed.offset,sort:"modified",order:"desc")
                 feed.setTotalResults(WorkMetadata.count())
             }
@@ -43,7 +43,7 @@ class ResourcesController {
                 text:feed.toMap().encodeAsJSON())
         }
         
-        if (feed.offset < grailsApplication.config.jangle.connector.global_options.maximum_results) {
+        if (feed.offset < grailsApplication.config.jangle.connector.maxResults) {
             def updates = WorkMetadata.syncIndex()
             print updates.size
         }
@@ -55,18 +55,26 @@ class ResourcesController {
         feedService.setConnectorBase(request.getHeader('x-connector-base'))
         def feed = new FeedResponse(request:request.forwardURI)
         if(!params.offset) params.offset = 0
+        feed.setOffset(params.offset.toInteger())
         def works = WorkMetadata.getAll(requestService.translateId(params.id))
         def related = []
+        def ids = []
         works.each {
-            def results
-            if(params.relationship == "items") {
-                results = it.getItems(params.offset.toInteger())
-            } else {
-                results = it.getCollections(params.offset.toInteger())
-            }
-            if(results.size() > 0) {related.addAll(results)}
+            ids << it.id
         }
 
+        if(params.relationship == "items") {
+            related = Item.findAllByWorkIdInList(ids, 
+                [max:grailsApplication.config.jangle.connector.maxResults,
+                offset:feed.offset,sort:"modified",order:"desc"])
+        } else {
+            related = WorkCollection.getAllByWorkIds(ids, feed.offset,
+                grailsApplication.config.jangle.connector.maxResults)
+        }
+        related.each {
+            it.setVia('resources', ids)
+        }
+                
         feed.setTotalResults(related.size())
         feed.offset = params.offset.toInteger()
         if(related.size() > 0) {
@@ -87,27 +95,30 @@ class ResourcesController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if(params.filter == 'opac') {
-            if (feed.offset > grailsApplication.config.jangle.connector.global_options.maximum_results) {
-                def worklist = WorkMetadata.search("opacSuppress:F", sort:"modified", order:"desc",
-                    max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+            if (feed.offset > grailsApplication.config.jangle.connector.maxResults) {
+                def worklist = WorkMetadata.search("opacSuppress:F AND indexSuppress:F", sort:"modified", order:"desc",
+                    max:grailsApplication.config.jangle.connector.maxResults,
                     offset:params.offset.toInteger())
-                    def ids = []
-                    worklist.results.each {
-                        ids << it.id
-                    }
+                    //def ids = []
+                    //worklist.results.each {
+                    //    ids << it.id
+                    //}
                     //works = WorkMetadata.getAll(ids)
                     works = worklist.results
                     feed.setTotalResults(worklist.total)
             } else {
                 def c = WorkMetadata.createCriteria()
-                works = c.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+                works = c.list(max:grailsApplication.config.jangle.connector.maxResults,
                         offset:feed.offset,sort:"modified",order:"desc") {
                         eq('opacSuppress','F')
                         }
                 c = WorkMetadata.createCriteria()
                 def count = c.get {
                     projections {count('id')}
-                    eq('opacSuppress','F')                
+                    eq('opacSuppress','F')            
+                    and {
+                        eq('indexSuppress','F')
+                    }    
                 }
                 feed.setTotalResults(count)
             }            
@@ -126,6 +137,10 @@ class ResourcesController {
             render(contentType:requestService.contentType(request.getHeader('accept')),
                 text:feed.toMap().encodeAsJSON())
         }
+        if (feed.offset < grailsApplication.config.jangle.connector.maxResults) {
+            def updates = WorkMetadata.syncIndex()
+            print updates.size
+        }        
         
 
     }

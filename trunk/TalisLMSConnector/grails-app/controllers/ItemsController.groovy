@@ -9,19 +9,26 @@ class ItemsController {
         def items = []
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
-
-//        
         if(!params.id) {
-            items = Item.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,offset:params.offset.toInteger(),sort:"created",
-            order:"desc")
-            feed.setTotalResults(Item.count())
+            if (feed.offset > grailsApplication.config.jangle.connector.maxResults) {
+                def itemlist = Item.search("*:*", sort:"modified", order:"desc",
+                    max:grailsApplication.config.jangle.connector.maxResults,
+                    offset:params.offset.toInteger())
+
+                    items = itemlist.results
+                    feed.setTotalResults(itemlist.total)            
+            } else {
+                items = Item.list(max:grailsApplication.config.jangle.connector.maxResults,offset:params.offset.toInteger(),sort:"created",
+                order:"desc")
+                feed.setTotalResults(Item.count())
+            }
         } else {
             items = [Item.get(params.id)]
             feed.setTotalResults(items.size)
         }
         feedService.buildFeed(feed,items,params)
 
-        render(contentType:requestService.contentType(request.getHeader('accept')),
+        render(contentType:'application/json',
             text:feed.toMap().encodeAsJSON())
 
     }
@@ -32,17 +39,24 @@ class ItemsController {
         def feed = new FeedResponse(request:request.forwardURI)
         if(!params.offset) params.offset = 0
         def items = Item.getAll(requestService.translateId(params.id))
-        def related = []
+        def related = [:]
+        def currWork
         items.each {
-            related = [it.getWork()]
+            currWork = it.getWork()
+            if(!related[currWork.id]) {
+                currWork.via['items'] = [it.id]
+                related[currWork.id] = currWork
+            } else {
+                related[currWork.id].via['items'] << it.id
+            }
+
         }
 
         feed.setTotalResults(related.size())
         feed.offset = params.offset.toInteger()
-
         if(related.size() > 0) {
-            feedService.buildFeed(feed,related,params)
-            render(contentType:requestService.contentType(request.getHeader('accept')),
+            feedService.buildFeed(feed,related.values().toList(),params)
+            render(contentType:'application/json',
                 text:feed.toMap().encodeAsJSON())
         } else {
 

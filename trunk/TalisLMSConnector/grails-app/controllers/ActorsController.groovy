@@ -20,7 +20,7 @@ class ActorsController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if (!params.id) {
-            borrowers = Borrower.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,
+            borrowers = Borrower.list(max:grailsApplication.config.jangle.connector.maxResults,
                 offset:params.offset.toInteger(), sort:"modified",order:"desc")
             feed.setTotalResults(Borrower.count())
 
@@ -31,7 +31,7 @@ class ActorsController {
 
         feedService.buildFeed(feed,borrowers,params)
 
-        render(contentType:requestService.contentType(request.getHeader('accept')),
+        render(contentType:'application/json',
             text:feed.toMap().encodeAsJSON())
 
 

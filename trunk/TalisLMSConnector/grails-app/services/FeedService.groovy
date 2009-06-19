@@ -12,7 +12,7 @@ class FeedService {
                 entity = 'actors'
                 break
             case WorkCollection:
-                //setCollectionAttributes(entries)
+                setCollectionAttributes(entries)
                 entity = 'collections'
                 break
             case Item:
@@ -24,28 +24,28 @@ class FeedService {
                 entity = 'resources'
                 break
         }
-        if(!params.format) { params.format = config.entities[entity].record_types[0]}
-        if(config.entities[entity].record_types.size() > 1) {
-            addFeedAlternateFormats(feed,params.format,config.entities[entity].record_types)
+        if(!params.format) { params.format = config.entities."${entity}".recordTypes[0]}
+        if(config.entities."${entity}".recordTypes.size() > 1) {
+            addFeedAlternateFormats(feed,params.format,config.entities."${entity}".recordTypes)
         }
-        if(config.record_types[params.format].stylesheets && config.record_types[params.format].stylesheets.feed && config.record_types[params.format].stylesheets.feed.entities && config.record_types[params.format].stylesheets.feed.entities.contains(entity)) {
-           feed.addStylesheet(config.record_types[params.format].stylesheets.feed.uri)
+        if(config.recordTypes."${params.format}".stylesheets.feed.entities && config.recordTypes."${params.format}".stylesheets.feed.entities.contains(entity)) {
+           feed.addStylesheet(config.recordTypes."${params.format}".stylesheets.feed.uri)
         }
         for(entry in entries) {            
             entry.setEntityUri(connectorBase)
             def entryMap = entry.toMap()
             def method_name
-            if(config.entities[entity].method_aliases && config.entities[entity].method_aliases[params.format]) {
-                method_name = 'to_'+config.entities[entity].method_aliases[params.format]
+            if(config.entities."${entity}".methodAliases && config.entities."${entity}".methodAliases[params.format]) {
+                method_name = 'to_'+config.entities."${entity}".methodAliases[params.format]
             } else {
                 method_name = 'to_'+params.format
             }
             entryMap["content"] = entry.invokeMethod(method_name,null)
-            entryMap["content_type"] = config.record_types[params.format]["content-type"]
-            entryMap["format"] = config.record_types[params.format]["uri"]
+            entryMap["content_type"] = config.recordTypes."${params.format}".contentType
+            entryMap["format"] = config.recordTypes."${params.format}".uri
             feed.addData(entryMap)
-            if(config.entities[entity].record_types.size() > 1) {
-                addEntryAlternateFormats(entryMap,params.format,config.entities[entity].record_types)
+            if(config.entities."${entity}".recordTypes.size() > 1) {
+                addEntryAlternateFormats(entryMap,params.format,config.entities."${entity}".recordTypes)
             }
         }
 
@@ -117,7 +117,7 @@ class FeedService {
 
     def addFeedAlternateFormats(feed,fmt,altFormats) {
         def fmtUri
-        def feedUri = (connectorBase+(feed.request =~ /^[^\/]*${config.global_options.servlet_path}/).replaceFirst('')).toURI()
+        def feedUri = (connectorBase+(feed.request =~ /^[^\/]*${config.servletPath}/).replaceFirst('')).toURI()
 
         def deformattedFeedUri
         if(feedUri.getQuery() && feedUri.getQuery() =~ /format=/) {
@@ -132,7 +132,7 @@ class FeedService {
         }
         altFormats.each {
             if(it != fmt) {
-                fmtUri = config.record_types[it].uri
+                fmtUri = config.recordTypes."${it}".uri
                 feed.addAlternateFormat(fmtUri,deformattedFeedUri+"format=${it}")
             }
         }
@@ -143,7 +143,7 @@ class FeedService {
         entry["alternate_formats"] = [:]
         altFormats.each {
             if(it != fmt) {
-                fmtUri = config.record_types[it].uri
+                fmtUri = config.recordTypes."${it}".uri
                 entry["alternate_formats"][fmtUri] = entry["id"]+"?format=${it}"
             }
         }

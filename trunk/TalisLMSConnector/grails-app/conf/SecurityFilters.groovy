@@ -4,7 +4,6 @@ class SecurityFilters {
 			basicAuth(controller:'actors', action:'*') {
 		           before = {
 		            	 def authString = request.getHeader('Authorization')
-
 		            	 if(!authString){
 		            		 return
 		            	 }
@@ -15,8 +14,8 @@ class SecurityFilters {
                          if(!(credentials[0] && credentials[1])) {
                              return
                          }
-                         if(feedService.config.global_options.administrator_accounts && feedService.config.global_options.administrator_accounts[credentials[0]]) {
-                             if(feedService.config.global_options.administrator_accounts[credentials[0]] == credentials[1]) {
+                         if(feedService.config.adminAccounts[credentials[0]]) {                            
+                             if(feedService.config.adminAccounts[credentials[0]] == credentials[1]) {
                                  session.user = credentials[0]
                                  session.user_level = 100
                              } else {

@@ -10,14 +10,14 @@ class CollectionsController {
         def feed = new FeedResponse(request:request.forwardURI)
         feed.setOffset(params.offset.toInteger())
         if(!params.id) {
-            colls = WorkCollection.list(max:grailsApplication.config.jangle.connector.global_options.maximum_results,offset:params.offset.toInteger())
+            colls = WorkCollection.list(max:grailsApplication.config.jangle.connector.maxResults,offset:params.offset.toInteger())
             feed.setTotalResults(WorkCollection.count())
         } else {
             colls = [WorkCollection.get(params.id)]
             feed.setTotalResults(colls.size)
         }
         feedService.buildFeed(feed,colls,params)
-        render(contentType:requestService.contentType(request.getHeader('accept')),
+        render(contentType:'application/json',
             text:feed.toMap().encodeAsJSON())
 
     }
@@ -28,16 +28,17 @@ class CollectionsController {
         if(!params.offset) params.offset = 0
         def coll = WorkCollection.getAll(requestService.translateId(params.id))
         def related = []
+        def ids = []
         coll.each {
-            related = it.getWorks(params.offset.toInteger())
+            ids << it.id
         }
-
-        feed.setTotalResults(related.size())
+        related = WorkMetadata.findByCollectionIds(ids, params.offset.toInteger(), grailsApplication.config.jangle.connector.maxResults)
+        feed.setTotalResults(WorkMetadata.countByCollectionIds(ids))
         feed.offset = params.offset.toInteger()
 
         if(related.size() > 0) {
             feedService.buildFeed(feed,related,params)
-            render(contentType:requestService.contentType(request.getHeader('accept')),
+            render(contentType:'application/json',
                 text:feed.toMap().encodeAsJSON())
         } else {
 

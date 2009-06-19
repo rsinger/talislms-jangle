@@ -17,13 +17,15 @@ class WorkMetadata {
     Boolean hasItems
     List collections = []
     String title
+    String baseUri
     String uri
+    Map via = [:]
 
     //static searchable = [only: ['modified', 'title', 'opacSuppress']]
     static searchable = true
 
 
-    static transients = ['record', 'hasItems', 'collections', 'title', 'uri']
+    static transients = ['record', 'hasItems', 'collections', 'title', 'uri', 'via', 'baseUri']
     static mapping = {
         table 'WORKS_META'
         version false        
@@ -41,6 +43,7 @@ class WorkMetadata {
     }
 
     def setEntityUri(base) {
+        baseUri = base
         uri = "${base}/resources/${id}"
     }
     def raw_to_record() {
@@ -64,7 +67,9 @@ class WorkMetadata {
 
         //if(hasItems == null) {Item.itemCheckFromWorks(this)}
         def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-        
+        if(modified == null) {
+            modified = new java.sql.Timestamp(new Date().getTime())
+        }
         def workMap = ["id":uri,"title":getTitle(),
         "updated":dateFormatter.format(modified)]
         def relationships = [:]
@@ -75,6 +80,14 @@ class WorkMetadata {
         if(hasItems) {
             relationships["http://jangle.org/vocab/Entities#Item"] =
                 "${uri}/items/"
+        }
+        if(via){
+            via.keySet().each() {key ->
+                if(!workMap['link']) { workMap['link'] = ['via':[]]}
+                via[key].each() {val ->
+                    workMap['link']['via'] << ['href':"${baseUri}/${key}/${val}",'type':'application/atom+xml']
+                }
+            }
         }
         if(opacSuppress == 'F') { workMap["categories"] = ['opac']}
         workMap["relationships"] = relationships
@@ -186,11 +199,23 @@ class WorkMetadata {
 
     }
 
-    static def findByCollectionId(collectionId, offset=0) {
+    static def findByCollectionIds(collectionIds, offset=0, max=100) {
         def workIds = WorkMetadata.executeQuery(
-            "SELECT w.id FROM WorkMetadata w, Title t WHERE w.id = t.workId AND t.collectionId = 1 ORDER BY w.modified DESC", [max:100,offset:offset])
-        return WorkMetadata.getAll(workIds)
+            "SELECT w.id FROM WorkMetadata w, Title t WHERE w.id = t.workId AND t.collectionId IN (:cIds) ORDER BY w.modified DESC",[cIds:collectionIds], [max:max,offset:offset])
+        def works = WorkMetadata.getAll(workIds)
+        works.each() {
+            it.via['collections'] = []
+            it.collections.each { coll ->
+                if(collectionIds.contains(coll.id)) { it.via['collections'] << coll.id }
+            }
+        }
     }
+    
+    static def countByCollectionIds(collectionIds) {
+        def workIdCount = WorkMetadata.executeQuery(
+            "SELECT count(distinct t.workId) FROM Title t WHERE t.collectionId IN (:cIds)",[cIds:collectionIds])
+        return workIdCount[0]
+    }    
     
     static def syncIndex() {
         def lastIndexed = search("*:*", sort:"modified", order:"desc", max:1)

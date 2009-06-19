@@ -5,7 +5,7 @@ class Item {
 
     String barcode
     Integer status_id
-    Integer workId
+    Long workId
     String site
     Timestamp modified
     Timestamp created
@@ -19,8 +19,10 @@ class Item {
     Integer classId
     Boolean onLoan = false
     String suffix
+    Map via = [:]
     static transients = ['uri','workUri','available', 'location','statusMessage',
-    'dateAvailable', 'borrowerId', 'onLoan']
+    'dateAvailable', 'borrowerId', 'onLoan', 'via']
+    static searchable = true
     static mapping = {
        table 'ITEM'
        version false       
@@ -49,12 +51,12 @@ class Item {
     static def itemCheckFromWorks(worksList) {
         def workIds = []
         worksList.each {
-            workIds << it.id.toInteger()            
+            workIds << it.id            
         }
         def workIdList = executeQuery("SELECT DISTINCT i.workId FROM Item i WHERE i.workId IN (:idList)",
             [idList:workIds])
         for(work in worksList) {
-            if(workIdList.contains(work.id.toInteger())) {
+            if(workIdList.contains(work.id)) {
                 work.setHasItems(true)
             } else {
                 work.setHasItems(false)
@@ -88,6 +90,13 @@ class Item {
             relationships["http://jangle.org/vocab/Entities#Resource"]="${uri}/resources/"
         }
         itemMap['relationships'] = relationships
+        if(via) {
+            if(via['resources']) {
+                if(!itemMap['link']) { itemMap['link'] = [:]}
+                if(!itemMap['link']['via']) { itemMap['link']['via'] = [] }
+                itemMap['link']['via'] << ['href':workUri,'type':'application/atom+xml']
+            }
+        }
 
         return itemMap
     }
@@ -166,6 +175,23 @@ class Item {
     def getWork() {
         return WorkMetadata.get(workId)
     }
+    
+    def setVia(entity, ids) {
+        via[entity] = ids
+    }
+    
+    static def syncIndex() {
+        def lastIndexed = search("*:*", sort:"modified", order:"desc", max:1)
+        if (lastIndexed.total == 0) {
+            return []
+        }
+        def newItems = findAllByModifiedGreaterThanEquals(lastIndexed.results[0].modified)
+        if (newItems.size == 1 && newItems[0].id == lastIndexed.results[0].id) {
+            return []
+        }
+        index(newItems)
+        return newItems
+    }    
     
 
 }
