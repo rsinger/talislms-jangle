@@ -36,5 +36,43 @@ class ActorsController {
 
 
     }
+    def relationship = {
+        requestService.init()
+        if(!session.user) {
+          response.status = 401 //Not Found
+          response.addHeader("WWW-Authenticate","Basic realm='Alto Jangle")
+          render "Authorization Required."
+          return
+        } else {
+            if(session.user_level == 1) {
+                params.id = session.user
+            }
+        }
+        feedService.setConnectorBase(request.getHeader('x-connector-base'))
+        def feed = new FeedResponse(request:request.forwardURI)
+        if(!params.offset) params.offset = 0
+        feed.setOffset(params.offset.toInteger())
+        def actors = Borrower.getAll(requestService.translateId(params.id))
+        
+        def ids = []
+        actors.each {
+            ids << it.id
+        }
+
+        def related = Loan.findItemsFromBorrowerIds(ids)
+
+
+        feed.setTotalResults(related.size())
+        feed.offset = params.offset.toInteger()
+        if(related.size() > 0) {
+            feedService.buildFeed(feed,related,params)
+            render(contentType:'application/json',
+                text:feed.toMap().encodeAsJSON())
+        } else {
+
+          response.status = 404 //Not Found
+          render "${request.forwardURI} not found."
+        }
+    }
 
 }

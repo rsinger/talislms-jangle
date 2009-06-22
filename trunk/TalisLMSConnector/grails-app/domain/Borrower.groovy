@@ -10,9 +10,12 @@ class Borrower {
     Date registrationDate
     Timestamp created
     Timestamp modified
-    Timestamp expiration    
+    Timestamp expiration
+    String baseUri
     String uri
-    static transients = ['uri']
+    Boolean hasItems = false
+    Map via = [:]
+    static transients = ['uri', 'via', 'baseUri', 'hasItems']
     static mapping = {
         table 'BORROWER'
         version false
@@ -35,6 +38,7 @@ class Borrower {
     }
 
     def setEntityUri(base) {
+        baseUri = base
         uri = "${base}/actors/${id}"
     }
 
@@ -47,6 +51,9 @@ class Borrower {
         def borrowerMap = ["id":uri,
         "title":"${surname}, ${firstNames}","updated":dateFormatter.format(modified),
         "created":dateFormatter.format(created)]
+        if(hasItems) {
+            borrowerMap['relationships'] = ["http://jangle.org/vocab/Entities#Item":"${uri}/items/"]
+        }
 
         return borrowerMap
     }
@@ -55,7 +62,9 @@ class Borrower {
         def dateFormatter = new org.apache.log4j.helpers.ISO8601DateFormat()
         def vcard="BEGIN:VCARD\nVERSION:3.0\nFN:${firstNames} ${surname}\n"
         vcard = "${vcard}N:${surname};${firstNames};;;\n"
-        vcard = "${vcard}BDAY:${dateFormatter.format(birthDate)}\n"
+        if(birthDate) {
+            vcard = "${vcard}BDAY:${dateFormatter.format(birthDate)}\n"
+        }
         vcard = "${vcard}URL:${uri}\n"
         vcard = "${vcard}REV:${dateFormatter.format(modified)}\n"
         vcard = "${vcard}X-BARCODE:${barcode}\nEND:VCARD\n"

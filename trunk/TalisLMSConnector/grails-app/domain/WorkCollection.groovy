@@ -33,15 +33,6 @@ class WorkCollection {
             collMap["relationships"] = ["http://jangle.org/vocab/Entities#Resource":
             "${uri}/resources/"]
         }
-        if(via) {
-            if(via['resources']) {
-                if(!collMap['links']) { collMap['links'] = [:]}
-                if(!collMap['links']['via']) { collMap['links']['via'] = [] }
-                via['resources'].each {
-                    collMap['links']['via'] << ['href':"${baseUri}/collections/${it}",'type':'application/atom+xml']
-                }
-            }
-        }
 
         return collMap
     }

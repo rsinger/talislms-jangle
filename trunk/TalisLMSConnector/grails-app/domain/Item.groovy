@@ -15,7 +15,7 @@ class Item {
     String statusMessage
     Map location
     Timestamp dateAvailable
-    Integer borrowerId
+    Long borrowerId
     Integer classId
     Boolean onLoan = false
     String suffix
@@ -39,7 +39,6 @@ class Item {
         }
 
     }
-
 
     static constraints = {
         barcode(nullable:true)
@@ -89,14 +88,10 @@ class Item {
         if(workId) {
             relationships["http://jangle.org/vocab/Entities#Resource"]="${uri}/resources/"
         }
-        itemMap['relationships'] = relationships
-        if(via) {
-            if(via['resources']) {
-                if(!itemMap['links']) { itemMap['links'] = [:]}
-                if(!itemMap['links']['via']) { itemMap['links']['via'] = [] }
-                itemMap['links']['via'] << ['href':workUri,'type':'application/atom+xml']
-            }
+        if(borrowerId) {
+            relationships["http://jangle.org/vocab/Entities#Actor"]="${uri}/actors/"
         }
+        itemMap['relationships'] = relationships
 
         return itemMap
     }

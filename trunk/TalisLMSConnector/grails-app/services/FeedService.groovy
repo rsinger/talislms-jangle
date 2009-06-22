@@ -9,6 +9,7 @@ class FeedService {
         def entity
         switch(entries[0].getClass()) {
             case Borrower:
+                setActorAttributes(entries)
                 entity = 'actors'
                 break
             case WorkCollection:
@@ -34,6 +35,14 @@ class FeedService {
         for(entry in entries) {            
             entry.setEntityUri(connectorBase)
             def entryMap = entry.toMap()
+            if(entry.via){
+                entry.via.keySet().each() {key ->
+                    if(!entryMap['links']) { entryMap['links'] = ['via':[]]}
+                    entry.via[key].each() {val ->
+                        entryMap['links']['via'] << ['href':"${connectorBase}/${key}/${val}",'type':'application/atom+xml']
+                    }
+                }
+            }
             def method_name
             if(config.entities."${entity}".methodAliases && config.entities."${entity}".methodAliases[params.format]) {
                 method_name = 'to_'+config.entities."${entity}".methodAliases[params.format]
@@ -115,6 +124,10 @@ class FeedService {
         Title.checkWorksFromCollections(collections)
     }
 
+    def setActorAttributes(actors) {
+        Loan.setHasItemsFromActorsList(actors)
+    }
+    
     def addFeedAlternateFormats(feed,fmt,altFormats) {
         def fmtUri
         def feedUri = (connectorBase+(feed.request =~ /^[^\/]*${config.servletPath}/).replaceFirst('')).toURI()

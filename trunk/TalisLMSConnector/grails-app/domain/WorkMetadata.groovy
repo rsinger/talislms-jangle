@@ -81,14 +81,7 @@ class WorkMetadata {
             relationships["http://jangle.org/vocab/Entities#Item"] =
                 "${uri}/items/"
         }
-        if(via){
-            via.keySet().each() {key ->
-                if(!workMap['links']) { workMap['links'] = ['via':[]]}
-                via[key].each() {val ->
-                    workMap['links']['via'] << ['href':"${baseUri}/${key}/${val}",'type':'application/atom+xml']
-                }
-            }
-        }
+
         if(opacSuppress == 'F') { workMap["categories"] = ['opac']}
         workMap["relationships"] = relationships
         return workMap

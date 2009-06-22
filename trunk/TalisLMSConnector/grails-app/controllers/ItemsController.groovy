@@ -31,6 +31,9 @@ class ItemsController {
         render(contentType:'application/json',
             text:feed.toMap().encodeAsJSON())
 
+        if (feed.offset < grailsApplication.config.jangle.connector.maxResults) {
+            def updates = Item.syncIndex()
+        }
     }
 
     def relationship = {
@@ -40,16 +43,46 @@ class ItemsController {
         if(!params.offset) params.offset = 0
         def items = Item.getAll(requestService.translateId(params.id))
         def related = [:]
-        def currWork
-        items.each {
-            currWork = it.getWork()
-            if(!related[currWork.id]) {
-                currWork.via['items'] = [it.id]
-                related[currWork.id] = currWork
+        
+        if(params.relationship == 'actors') {
+            if(!session.user) {
+                response.status = 401 //Not Found
+                response.addHeader("WWW-Authenticate","Basic realm='Alto Jangle")
+                render "Authorization Required."
+                return
             } else {
-                related[currWork.id].via['items'] << it.id
+                def actorIds = []
+                Loan.findCurrentLoansFromItemList(items)
+                items.each {
+                    if(session.user_level == 1 && it.borrowerId != session.user) {
+                    } else {
+                        if(!actorIds.contains(it.borrowerId)) { actorIds << it.borrowerId }
+                    }
+                }
+                println actorIds
+                if(actorIds.size() > 0) {
+                    def actors = Borrower.getAll(actorIds)
+                    actors.each {
+                        println it.id
+                        related[it.id] = it
+                        related[it.id].via['items'] = []
+                    }
+                    items.each {
+                        related[it.borrowerId].via['items'] << it.id
+                    }
+                }
             }
-
+        } else {
+            def currWork
+            items.each {
+                currWork = it.getWork()
+                if(!related[currWork.id]) {
+                    currWork.via['items'] = [it.id]
+                    related[currWork.id] = currWork
+                } else {
+                    related[currWork.id].via['items'] << it.id
+                }           
+            }
         }
 
         feed.setTotalResults(related.size())

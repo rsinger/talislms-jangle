@@ -44,8 +44,7 @@ class ResourcesController {
         }
         
         if (feed.offset < grailsApplication.config.jangle.connector.maxResults) {
-            def updates = WorkMetadata.syncIndex()
-            print updates.size
+            def updates = WorkMetadata.syncIndex()            
         }
 
     }
