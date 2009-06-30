@@ -1,0 +1,18 @@
+#summary HOWTO Install the TalisLMS Connector.
+
+= Introduction =
+
+This will attempt to walk you through installing the TalisLMS Connector
+
+
+= Option 1 =
+
+*Installing from the .war file*
+
+This (theoretically) should be the simplest approach.
+
+Drop the .war file into however you generally deploy Java webapps (you probably have a /webapps directory somewhere in your servlet container tree).
+
+In the home directory of the user account that your servlet engine is running, cd (or mkdir) ~/.grails and copy [http://talislms-jangle.googlecode.com/svn/trunk/TalisLMSConnector/grails-app/conf/jangleConfig.groovy-dist this file] to it, edit as necessary and rename it to _jangleConfig.groovy_.
+
+
