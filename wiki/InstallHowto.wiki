@@ -30,6 +30,8 @@ Install Grails version 1.1.1:
 
 In the home directory of the user account that your servlet engine is running, cd (or mkdir) ~/.grails and copy [http://talislms-jangle.googlecode.com/svn/trunk/TalisLMSConnector/grails-app/conf/jangleConfig.groovy-dist this file] to it, edit as necessary and rename it to _jangleConfig.groovy_.
 
+Also cd into your /path/to/TalisLMSConnector/grails-app/conf directory and copy DataSource.groovy-dist to DataSource.groovy.  Change the username and password values to the username/password you use to access your Alto's Sybase database.
+
 From here you can cd into your TalisLMSConnector directory (that was created from SVN) and run:
 
 grails run-app
@@ -41,3 +43,5 @@ or
 grails war
 
 To compile a .war file.  If you go this route, after compiling, follow the instructions in Option 1.
+
+The on first load it will build the Lucene indexes for WORKS_META, ITEMS, BORROWERS and SITE_SERIALS_HOLDINGS.  This can take quite a while.
