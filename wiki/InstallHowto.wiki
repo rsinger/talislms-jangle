@@ -1,4 +1,5 @@
 #summary HOWTO Install the TalisLMS Connector.
+#labels Featured
 
 = Introduction =
 
