@@ -2,7 +2,7 @@ import java.sql.Timestamp
 import groovy.xml.MarkupBuilder
 import java.text.SimpleDateFormat
 class Item {
-
+    String fauxId
     String barcode
     Integer status_id
     Long workId
@@ -21,7 +21,7 @@ class Item {
     String suffix
     Map via = [:]
     static transients = ['uri','workUri','available', 'location','statusMessage',
-    'dateAvailable', 'borrowerId', 'onLoan', 'via']
+    'dateAvailable', 'borrowerId', 'onLoan', 'via', 'fauxId']
     static searchable = true
     static mapping = {
        table 'ITEM'
@@ -47,6 +47,10 @@ class Item {
         suffix(nullable:true)
     }
 
+    def afterLoad = {
+        fauxId = 'i-'+id
+    }
+
     static def itemCheckFromWorks(worksList) {
         def workIds = []
         worksList.each {
@@ -65,7 +69,7 @@ class Item {
     }
     def setEntityUri(connectorBase) {
         if(!connectorBase) { connectorBase = ''}
-        this.uri = "${connectorBase}/items/${id}"
+        this.uri = "${connectorBase}/items/${fauxId}"
         this.workUri = "${connectorBase}/resources/${workId}"
     }
     def toMap() {
