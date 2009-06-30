@@ -15,4 +15,28 @@ Drop the .war file into however you generally deploy Java webapps (you probably 
 
 In the home directory of the user account that your servlet engine is running, cd (or mkdir) ~/.grails and copy [http://talislms-jangle.googlecode.com/svn/trunk/TalisLMSConnector/grails-app/conf/jangleConfig.groovy-dist this file] to it, edit as necessary and rename it to _jangleConfig.groovy_.
 
+= Option 2 =
 
+*Installing from source*
+
+This (theoretically) should keep you up to date with the latest changes.  Since the TalisLMS Connector is a fairly swiftly moving target, this is the best way to ensure you have the most functionality.
+
+Pull the TalisLMS Connector sources from SVN:
+[http://code.google.com/p/talislms-jangle/source/checkout Follow the directions here]
+
+Install Grails version 1.1.1:
+[http://www.grails.org/Installation Follow the installation instructions]
+
+In the home directory of the user account that your servlet engine is running, cd (or mkdir) ~/.grails and copy [http://talislms-jangle.googlecode.com/svn/trunk/TalisLMSConnector/grails-app/conf/jangleConfig.groovy-dist this file] to it, edit as necessary and rename it to _jangleConfig.groovy_.
+
+From here you can cd into your TalisLMSConnector directory (that was created from SVN) and run:
+
+grails run-app
+
+To get a basic implementation in Jetty running on port 8080
+
+or
+
+grails war
+
+To compile a .war file.  If you go this route, after compiling, follow the instructions in Option 1.
