@@ -33,24 +33,24 @@ class WorkMeta < AltoModel
     end
   end
   
-  def marc
-    marc_content('marc')
+  def to_marc
+    MARC::Record.new_from_marc(self.RAW_DATA).to_marc
   end
   
-  def marcxml
-    marc_content('xml')
+  def to_marcxml
+    MARC::Record.new_from_marc(self.RAW_DATA).to_xml
   end
 
-  def mods
-    marc_content('xml')
+  def to_mods
+    to_marcxml
   end
   
-  def dc
-    marc_content('xml')
+  def to_dc
+    to_marcxml
   end  
   
-  def oai_dc
-    marc_content('xml')
+  def to_oai_dc
+    to_marcxml
   end  
   
   def categories
@@ -59,14 +59,27 @@ class WorkMeta < AltoModel
     end
   end
   
+  def updated
+    self.MODIFIED_DATE.xmlschema
+  end
+  
+  def relationships
+    relationships = nil
+    if self.items or self.has_collections
+      relationships = {}
+      if self.items
+        relationships['http://jangle.org/rel/related#Item'] = "#{self.uri}/items/"
+      end
+      if self.has_collections
+        relationships['http://jangle.org/rel/related#Collection'] = "#{self.uri}/collections/"
+      end
+    end      
+    relationships
+  end
+  
   def entry(format)
     relationships = {}
-    if self.items
-      relationships['http://jangle.org/rel/related#Item'] = "#{self.uri}/items/"
-    end
-    if self.has_collections
-      relationships['http://jangle.org/rel/related#Collection'] = "#{self.uri}/collections/"
-    end    
+   
     {:id=>self.uri,:title=>self.title,:updated=>self.MODIFIED_DATE,:content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],:categories=>categories,
       :content_type=>AppConfig.connector['record_types'][format]['content-type'],:relationships=>relationships}

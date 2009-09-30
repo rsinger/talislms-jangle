@@ -1,20 +1,23 @@
 class ConnectorController < ApplicationController
+  
   before_filter :init_feed
   def feed
     if params[:offset]
-      offset = params[:offset].to_i
+      @offset = params[:offset].to_i
     else
-      offset = 0
+      @offset = 0
     end
 
-    if offset == 0
+    if @offset == 0
       @entities = case params[:entity]
       when 'actors' then Borrower.find(:all, :limit=>AppConfig.connector['page_size'], :include=>[:contacts, :contact_points], :order=>"EDIT_DATE desc")
       when 'collections' then Collection.find(:all, :limit=>AppConfig.connector['page_size'])
-      when 'items' then Item.find(:all, :limit=>AppConfig.connector['page_size'], :order=>"EDIT_DATE desc")
+      when 'items'
+        sync_models
+        HarvestItem.fetch_entities(0, AppConfig.connector['page_size'])
       when 'resources' then WorkMeta.find(:all, :limit=>AppConfig.connector['page_size'], :include=>[:items], :order=>"MODIFIED_DATE desc")
       end
-      sync_models
+      sync_models unless params[:entity] == 'items'
     else
       harvest_class = case params[:entity]
       when 'actors' then HarvestBorrower
@@ -23,16 +26,18 @@ class ConnectorController < ApplicationController
       when 'resources' then HarvestWork
       end
       unless harvest_class == Collection
-        @entities = harvest_class.fetch_entities(offset, AppConfig.connector['page_size'])
+        @entities = harvest_class.fetch_entities(@offset, AppConfig.connector['page_size'])
       else
-        @entities = Collection.find(:all, :limit=>AppConfig.connector['page_size'], :offset=>offset)
+        @entities = Collection.find(:all, :limit=>AppConfig.connector['page_size'], :offset=>@offset)
       end
 
     end
-    @feed.offset = offset
-    @feed.total_results = @entities.first.class.count
-    populate_feed
-    render :json=>@feed.to_hash
+    @total = @entities.first.class.count
+    populate_entities
+    params[:format] = nil if params[:format]
+    respond_to do | fmt |
+      fmt.json
+    end
   end
   
   def filter
@@ -86,26 +91,19 @@ class ConnectorController < ApplicationController
 
   private
   def init_feed
-    @feed = Feed.new(request.headers['REQUEST_URI'])
-    @feed.base = (request.headers['X_CONNECTOR_BASE']||'/connector')
-    @feed.entity = params[:entity]    
+    @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
+    @format = determine_format(params)
   end
-  def populate_feed    
+  def populate_entities    
     @entities.first.class.find_associations(@entities)
-    format = determine_format(params)
-    @entities.each do | entity |
-      entity.set_uri(@feed.base, @feed.entity)
-      @feed << entity.entry(format)
-    end
-    @feed.set_alternate_formats(AppConfig.connector)
-    @feed.set_stylesheets(AppConfig.connector, format)
   end
   def determine_format(params)
+    puts params.inspect
     # this needs to be fixed so it's appropriate for the entity
     if params[:format]
       return params[:format]
     end
-    return AppConfig.connector['entities'][params[:entity]]['record_types'].first
+    return AppConfig.connector['entities'][params[:entity]]['record_types'].keys.first
   end
   
   def sync_models

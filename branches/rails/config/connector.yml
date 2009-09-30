@@ -68,8 +68,8 @@ entities:
     actors:
         title: Borrowers
         record_types:            
-            - vcard
-            - talis_soa_borrower
+            vcard: vcard.erb
+            talis_soa_borrower: talis_borrower.xml.builder
         search: false
         options:
             - get
@@ -80,15 +80,11 @@ entities:
     resources:
         title: Bibliographic records
         record_types:
-            - marcxml
-            - marc
-            - mods
-            - dc
-            - oai_dc            
-        method_aliases:
-            dc: marcxml
-            oai_dc: marcxml
-            mods: marcxml            
+            marcxml: marc.erb
+            marc: marc.erb
+            mods: marc.erb
+            dc: marc.erb
+            oai_dc: marc.erb            
         search:
             longname: Search Bibliographic records in OpenBiblio
             description: Bibliographic records search.  Defaults to keyword anywhere.
@@ -111,10 +107,10 @@ entities:
         
     items:
         title: Holdings records
-        record_types:
-            - talis_soa_availability
-            - dlfexpanded
-            - daia
+        record_types:            
+            dlfexpanded: dlfexpanded.xml.builder
+            talis_soa_availability: talis_availability.xml.builder
+            daia: daia
         search: false
         options:
             - get
@@ -124,7 +120,7 @@ entities:
     collections:
         title: Categories
         record_types:
-            - dc
+            dc: dc.xml.builder
         search: false
         options:
             - get

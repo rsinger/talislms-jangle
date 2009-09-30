@@ -1,0 +1,5 @@
+<% content = case @format
+when "marc" then entity.to_marc
+else
+  entity.send("to_#{@format}".to_sym)
+end %><%= content -%>

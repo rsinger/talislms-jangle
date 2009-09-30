@@ -17,11 +17,24 @@ class Collection < AltoModel
     xml.target!
   end
   
+  def title
+    self.NAME
+  end
+  
+  def updated
+    DateTime.now
+  end
+  
+  def relationships
+    relationships = nil
+    if self.has_works
+      relationships = {'http://jangle.org/rel/related#Resource' => "/resources/"}
+    end
+    relationships
+  end
   def entry(format)
     relationships = {}
-    if self.has_works
-      relationships['http://jangle.org/rel/related#Work'] = "#{self.uri}/works/"
-    end    
+  
     {:id=>self.uri,:title=>self.NAME,:updated=>DateTime.now,:content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],:relationships=>relationships,
       :content_type=>AppConfig.connector['record_types'][format]['content-type']}
@@ -34,7 +47,7 @@ class Collection < AltoModel
       ids << entity.id
       entities[entity.id] = entity
     end
-    Title.find_by_sql(["SELECT DISTINCT(COLLECTION_ID) FROM TITLE WHERE COLLECTION_ID IN (?) AND WORK_ID IS NOT NULL", ids]).each do | title |
+    Title.find_by_sql(["SELECT DISTINCT COLLECTION_ID FROM TITLE WHERE COLLECTION_ID IN (?) AND WORK_ID IS NOT NULL", ids]).each do | title |
       entities[title.COLLECTION_ID].has_works = true
     end
   end  

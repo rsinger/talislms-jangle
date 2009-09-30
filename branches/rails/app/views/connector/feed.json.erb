@@ -1,0 +1,56 @@
+{
+  "type":"feed",
+  "request":"<%= request.headers['REQUEST_URI'] -%>",
+  "time":"<%= DateTime.now.xmlschema -%>",
+  "offset":<%= @offset -%>,
+  "totalResults":<%= @total -%>,
+  "formats":["<%= uri_from_format(@format) -%>"],
+  <% alt_fmts = get_alternate_formats(@format, request.headers['REQUEST_URI'])
+  unless alt_fmts.empty?%>
+    "alternate_formats":<%= alt_fmts.to_json -%>,
+  <% end %>  
+  <% xslt = get_feed_stylesheets
+  if xslt %>
+    "stylesheets":<%=xslt.to_json-%>,
+  <% end %>
+  "data":[
+    <% 
+    categories = []
+    @entities.each do | entity | %>
+      {
+        "id":"<%= entity_uri(entity) -%>",
+        "title":<%= entity.title.to_json -%>,
+        <% if entity.respond_to?(:author) %>
+          "author":<%= entity.author.to_json -%>,
+        <% end %>
+        "updated":"<%= entity.updated -%>",
+        <% if entity.respond_to?(:created) %>
+          "created":<%= entity.created -%>,
+        <% end %>
+        "format":"<%= uri_from_format(@format) -%>",
+        <% 
+        alt_fmts = get_alternate_formats(@format, entity_uri(entity))
+        unless alt_fmts.empty?%>
+          "alternate_formats":<%= alt_fmts.to_json -%>,
+        <% end %>
+        <% if entity.relationships %>
+          "relationships":{
+            <% entity.relationships.each do | uri, path | %>
+              "<%= uri -%>":"<%= "#{entity_uri(entity)}#{path}"-%>",
+            <% end %>},
+        <% end %>
+        <% if entity.respond_to?(:links) %>
+          "links":<%= entity.links.to_json -%>,
+        <% end %>
+      "content_type":"<%= AppConfig.connector['record_types'][@format]['content-type'] -%>",                
+      "content":<%= render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity}).to_json -%>,
+      <% if entity.respond_to?(:categories) %>
+        "categories":<%= entity.categories.to_json -%>,
+        <% categories = (categories + entity.categories).uniq %>
+      <% end %>
+      
+      },
+    <% end %>
+    ],
+    "categories":<%= categories.to_json -%>
+}
