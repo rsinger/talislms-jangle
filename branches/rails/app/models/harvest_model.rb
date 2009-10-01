@@ -6,7 +6,8 @@ module HarvestModel
     results.each do | result |
       ids << result.entity_id
     end
-    unless self.class == HarvestItem
+
+    unless results.first.is_a?(HarvestItem)
       entities = results.first.entity.class.find_eager(ids)
       if entities.length < results.length
         mismatch = results.length - entities.length

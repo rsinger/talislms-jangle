@@ -26,13 +26,18 @@ class ConnectorController < ApplicationController
       when 'resources' then HarvestWork
       end
       unless harvest_class == Collection
+        puts harvest_class
         @entities = harvest_class.fetch_entities(@offset, AppConfig.connector['page_size'])
       else
         @entities = Collection.find(:all, :limit=>AppConfig.connector['page_size'], :offset=>@offset)
       end
 
     end
-    @total = @entities.first.class.count
+    if params[:entity] != 'items'
+      @total = @entities.first.class.count      
+    else
+      @total = HarvestItem.count
+    end
     populate_entities
     params[:format] = nil if params[:format]
     respond_to do | fmt |
@@ -70,7 +75,11 @@ class ConnectorController < ApplicationController
 
     end
     @feed.offset = offset
-    @feed.total_results = @entities.first.class.count
+    if params[:entity] != 'items'
+      @feed.total_results = @entities.first.class.count
+    else
+      @feed.total_resutls = HarvestItem.count
+    end
     populate_feed
     render :json=>@feed.to_hash    
   end

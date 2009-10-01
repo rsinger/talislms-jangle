@@ -6,8 +6,8 @@ module ApplicationHelper
   def determine_partial(format)
     AppConfig.connector['entities'][params[:entity]]['record_types'][format]
   end
-  def entity_uri(entity) 
-    uri = "#{@connector_base}/#{params[:entity]}/#{entity.id}"
+  def entity_uri(id, entity=params[:entity]) 
+    uri = "#{@connector_base}/#{entity}/#{id}"
     uri
   end
   def alt_fmt_uri(uri, format)

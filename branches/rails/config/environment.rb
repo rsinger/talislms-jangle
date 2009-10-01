@@ -48,4 +48,5 @@ Rails::Initializer.run do |config|
   require RAILS_ROOT+'/lib/jdbcsybase_adapter'
   require RAILS_ROOT+'/lib/connector_responses'  
   require RAILS_ROOT+'/lib/vcard'    
+  require 'composite_primary_keys'
 end

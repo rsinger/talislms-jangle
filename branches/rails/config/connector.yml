@@ -109,8 +109,8 @@ entities:
         title: Holdings records
         record_types:            
             dlfexpanded: dlfexpanded.xml.builder
-            talis_soa_availability: talis_availability.xml.builder
-            daia: daia
+            #talis_soa_availability: talis_availability.xml.builder
+            #daia: daia.xml.builder
         search: false
         options:
             - get

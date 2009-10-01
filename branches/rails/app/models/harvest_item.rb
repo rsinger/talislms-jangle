@@ -15,8 +15,8 @@ class HarvestItem < ActiveRecord::Base
       self.full_item_sync
       self.full_holding_sync
     else
-      self.incremental_item_sync
-      self.incremental_holding_sync
+      self.incremental_item_sync(last_item_update.edit_date)
+      self.incremental_holding_sync(last_holding_update.edit_date)
     end
   end
   
@@ -84,7 +84,7 @@ class HarvestItem < ActiveRecord::Base
   def self.incremental_holding_sync(date)
     i = 0
     puts "Incremental sync of Holding to HarvestItem starting now."
-    Holding.find_by_sql(["SELECT h.*, w.MODIFIED_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS_META w WHERE h.WORK_ID = w.WORK_ID AND w.MODIFIED_DATE >= ?", holding_conditions]).each do | holding |
+    Holding.find_by_sql(["SELECT h.*, w.MODIFIED_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS_META w WHERE h.WORK_ID = w.WORK_ID AND w.MODIFIED_DATE >= ?", date]).each do | holding |
       self.holding_to_harvest_item(holding)
       i += 1
     end
@@ -110,8 +110,8 @@ class HarvestItem < ActiveRecord::Base
       when 'holding' then holding_ids << hi.holding_id
       end
     end
-    items = Item.find(item_ids)
-    holdings = Holding.find(holding_ids)
+    items = Item.find_eager(item_ids)
+    holdings = Holding.find_eager(holding_ids)
     combo = []
     harvest_items.each do | hi |
       if hi.item_type == 'item'
