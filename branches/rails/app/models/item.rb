@@ -5,6 +5,7 @@ class Item < AltoModel
   belongs_to :work_meta, :foreign_key=>"WORK_ID"
   has_many :borrowers, :through=>:loans
   has_many :loans, :foreign_key=>"ITEM_ID"
+  #has_many :reservations, :foreign_key=>"SATISFYING_ITEM_ID"
   belongs_to :classification, :foreign_key=>"CLASS_ID"
   belongs_to :location, :foreign_key=>"ACTIVE_SITE_ID"
   
@@ -16,9 +17,27 @@ class Item < AltoModel
     else "Unavailable"
     end
   end
+
+  def identifier
+    unless self.harvest_item
+      self.harvest_item =  HarvestItem.find_by_item_id(self.id)
+    end    
+    self.harvest_item.id
+  end
   
   def updated
     self.EDIT_DATE.xmlschema
+  end
+  
+  def daia_service
+    return nil unless self.loan_type
+    svc = case self.loan_type.NAME
+    when 'REFERENCE' then 'presentation'
+    when 'Not for Loan' then 'presentation'
+    when 'INTERLOAN' then 'interloan'
+    else 'loan'
+    end
+    svc
   end
   
   def relationships
@@ -51,6 +70,10 @@ class Item < AltoModel
     return marc.to_xml
   end
   
+  def to_marc
+    return marc.to_marc
+  end
+  
   def marc
     unless self.harvest_item
       self.harvest_item =  HarvestItem.find_by_item_id(self.id)
@@ -64,9 +87,13 @@ class Item < AltoModel
     record << MARC::ControlField.new('001',self.harvest_item.id.to_s)
     record << MARC::ControlField.new('004',self.WORK_ID.to_s)
     record << MARC::ControlField.new('005',self.EDIT_DATE.strftime("%Y%m%d%H%M%S.0"))
-    scheme = case self.classification.CLASS_AREA_ID.strip
-    when 'DDC' then "1"
-    when 'LC' then "0"
+    if self.classification
+      scheme = case self.classification.CLASS_AREA_ID.strip
+      when 'DDC' then "1"
+      when 'LC' then "0"
+      end
+    else
+      scheme = nil
     end
     location = MARC::DataField.new('852', scheme)
     unless self.ACTIVE_SITE_ID.nil? or self.ACTIVE_SITE_ID.empty?
@@ -75,7 +102,7 @@ class Item < AltoModel
     if self.classification
       location.append(MARC::Subfield.new('h', self.classification.CLASS_NUMBER))
     end
-    if self.SUFFIX
+    unless self.SUFFIX.nil? or self.SUFFIX.empty?
       location.append(MARC::Subfield.new('i', self.SUFFIX))
     end
     record << location
@@ -85,6 +112,11 @@ class Item < AltoModel
     if self.availability_message
       item_basic.append MARC::Subfield.new('j',self.availability_message)
     end
+    
+    unless self.BARCODE.nil? or self.BARCODE.empty?
+      item_basic.append MARC::Subfield.new('p',self.BARCODE)
+    end
+    
     unless self.DESC_NOTE.nil? or self.DESC_NOTE.empty?
       item_basic.append MARC::Subfield.new('z',self.DESC_NOTE)
     end
@@ -97,16 +129,24 @@ class Item < AltoModel
   end
   
   def available?
-    loans = self.loans.find_by_CURRENT_LOAN('Y')
-    if loans
-      return false
+    self.loans.each do | loan |
+      if loan.CURRENT_LOAN == 'Y'
+        return false
+      end
     end
+
     if self.status
       unless status.TYPE_STATUS == 5
         return false
       end
     end
     true
+  end
+  
+  def date_available
+    if available?
+      return DateTime.now.xmlschema
+    end
   end
   
   def self.find_eager(ids)
@@ -120,6 +160,7 @@ class Item < AltoModel
     loan_type_map = {}
     entities = {}
     entity_list.each do | entity |
+      next unless entity.is_a?(Item)
       entities[entity.id] = entity
       status_ids << entity.STATUS_ID
       status_map[entity.STATUS_ID] ||=[]
@@ -129,10 +170,10 @@ class Item < AltoModel
       loan_type_map[entity.TYPE_ID] << entity
     end
     status_ids.uniq!
-    item_type_ids.uniq!
-    states = TypeStatus.find_all_by_SUB_TYPE_AND_TYPE_STATUS(6,status_ids)
-    loan = TypeStatus.find_all_by_SUB_TYPE_AND_TYPE_STATUS(1,loan_type_ids)  
-    harvest_items = HarvestItem.find_by_item_id(entities.keys)  
+    loan_type_ids.uniq!
+    states = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(6,status_ids)
+    loan = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(1,loan_type_ids)  
+    harvest_items = HarvestItem.find_all_by_item_id(entities.keys)  
     states.each do | state |
       status_map[state.TYPE_STATUS].each do | entity |
         entity.status = state

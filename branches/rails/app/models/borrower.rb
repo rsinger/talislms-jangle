@@ -11,6 +11,7 @@ class Borrower < AltoModel
   #acts_as_solr :fields=> [{:BORROWER_ID=>:integer}, {:BARCODE=>:string},
   #  {:SURNAME=>:string}, {:FIRST_NAMES=>:string},{:EDIT_DATE=>:date}]
   attr_accessor :has_items, :current_address
+  alias :identifier :id
   def vcard
     vcard = Vpim::Vcard::Maker.make2 do | vc |
       vc.add_name do | name |

@@ -68,11 +68,39 @@ class HarvestWork < ActiveRecord::Base
     end
   end
   
-  def self.find_by_filter(filter, limit)
+  def self.find_by_filter(filter, offset, limit)
     if filter == 'opac'
-      puts limit
-      works = self.find_all_by_suppress_from_opac_and_suppress_from_work('F','F', :limit=>limit, :order=>"MODIFIED_DATE desc")
+      works = self.find_all_by_suppress_from_opac_and_suppress_from_work('F','F', :limit=>limit, :offset=>offset, :order=>"edit_date desc")
     end    
-    works
+    ids = []
+    works.each do | result |
+      ids << result.entity_id
+    end
+
+    entities = self.find_eager(ids)
+    if entities.length < results.length
+      mismatch = results.length - entities.length
+      puts "Length mismatch: #{mismatch}"      
+      ent_ids = []
+      entities.each do | entity |
+        ent_ids << entity.id
+      end
+      puts ent_ids.inspect
+      bad_ids = ids - ent_ids
+      bad_ids.each do | bad_id |
+        puts "Bad id: #{bad_id}"
+
+        results.each do | result |
+          if result.entity_id == id
+            puts "Result match #{result}"
+            d = self.delete(result.id)
+            puts "#{d} items deleted"
+          end
+        end
+
+      end
+      entities = entities + self.find_by_filter(filter, (offset+limit)-mismatch, mismatch)
+    end    
+    entities
   end  
 end

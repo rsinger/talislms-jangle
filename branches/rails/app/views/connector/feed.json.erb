@@ -18,7 +18,7 @@
     categories = []
     @entities.each do | entity | %>
       {
-        "id":"<%= entity_uri(entity.id) -%>",
+        "id":"<%= entity_uri(entity.identifier) -%>",
         "title":<%= entity.title.to_json -%>,
         <% if entity.respond_to?(:author) %>
           "author":<%= entity.author.to_json -%>,
@@ -29,7 +29,7 @@
         <% end %>
         "format":"<%= uri_from_format(@format) -%>",
         <% 
-        alt_fmts = get_alternate_formats(@format, entity_uri(entity.id))
+        alt_fmts = get_alternate_formats(@format, entity_uri(entity.identifier))
         unless alt_fmts.empty?%>
           "alternate_formats":<%= alt_fmts.to_json -%>,
         <% end %>

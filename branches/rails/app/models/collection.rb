@@ -4,7 +4,7 @@ class Collection < AltoModel
   has_many :titles, :foreign_key=>'COLLECTION_ID'
   has_many :work_metas, :through=>:titles
   attr_accessor :has_works
-  
+  alias :identifier :id
   def dc
     xml = Builder::XmlMarkup.new
     xml.rdf :RDF, {"xmlns:rdf"=>'http://www.w3.org/1999/02/22-rdf-syntax-ns#'} do | rdf |

@@ -6,6 +6,7 @@ class WorkMeta < AltoModel
   has_many :collections, :through=>:titles
   has_many :holdings, :foreign_key=>"WORK_ID"
   attr_accessor :has_collections
+  alias :identifier :id
 
   def title
     generate_content unless @content

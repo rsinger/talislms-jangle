@@ -47,6 +47,7 @@ Rails::Initializer.run do |config|
   require 'marc'
   require RAILS_ROOT+'/lib/jdbcsybase_adapter'
   require RAILS_ROOT+'/lib/connector_responses'  
-  require RAILS_ROOT+'/lib/vcard'    
+  require RAILS_ROOT+'/lib/vcard'   
+  require RAILS_ROOT+'/lib/namespaced_marc_xml'    
   require 'composite_primary_keys'
 end

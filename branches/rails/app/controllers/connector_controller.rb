@@ -26,7 +26,6 @@ class ConnectorController < ApplicationController
       when 'resources' then HarvestWork
       end
       unless harvest_class == Collection
-        puts harvest_class
         @entities = harvest_class.fetch_entities(@offset, AppConfig.connector['page_size'])
       else
         @entities = Collection.find(:all, :limit=>AppConfig.connector['page_size'], :offset=>@offset)
@@ -56,10 +55,12 @@ class ConnectorController < ApplicationController
       @entities = case params[:entity]
       when 'actors' then Borrower.find_by_filter(params[:filter], AppConfig.connector['page_size'])
       when 'collections' then Collection.find_by_filter(params[:filter], AppConfig.connector['page_size'])
-      when 'items' then Item.find_by_filter(params[:filter], AppConfig.connector['page_size'])
+      when 'items'
+        sync_models
+        HarvestItem.fetch_entities_by_filter(params[:filter], 0, AppConfig.connector['page_size'])
       when 'resources' then WorkMeta.find_by_filter(params[:filter], AppConfig.connector['page_size'])
       end
-      sync_models
+      sync_models  unless params[:entity] == 'items'
     else
       harvest_class = case params[:entity]
       when 'actors' then HarvestBorrower
@@ -87,15 +88,18 @@ class ConnectorController < ApplicationController
   # Returns entities specifically request by id, whether single ids, comma delimited lists or ranges
   def show
     @entities = case params[:entity]
-    when 'actors' then Borrower.find_all_by_BORROWER_ID(id_translate(params[:id]))
-    when 'collections' then Collection.find_all_by_COLLECTION_ID(id_translate(params[:id]))
-    when 'items' then Item.find_all_by_ITEM_ID(id_translate(params[:id]))
-    when 'resources' then WorkMeta.find_all_by_WORK_ID(id_translate(params[:id]))
+    when 'actors' then Borrower.find(id_translate(params[:id]))
+    when 'collections' then Collection.find(id_translate(params[:id]))
+    when 'items' then HarvestItem.fetch_originals(HarvestItem.find(id_translate(params[:id])))
+    when 'resources' then WorkMeta.find(id_translate(params[:id]))
     end
-    @feed.offset = 0
-    @feed.total_results = @entities.length
-    populate_feed
-    render :json=>@feed.to_hash    
+    @offset = 0
+    @total = @entities.length
+    populate_entities
+    params[:format] = nil if params[:format]
+    respond_to do | fmt |
+      fmt.json {render :action=>'feed'}
+    end
   end
 
   private
