@@ -12,7 +12,7 @@ class Borrower < AltoModel
   #  {:SURNAME=>:string}, {:FIRST_NAMES=>:string},{:EDIT_DATE=>:date}]
   attr_accessor :has_items, :current_address
   alias :identifier :id
-  def vcard
+  def to_vcard
     vcard = Vpim::Vcard::Maker.make2 do | vc |
       vc.add_name do | name |
         name.family = self.SURNAME if self.SURNAME && !self.SURNAME.strip.empty?
@@ -43,7 +43,7 @@ class Borrower < AltoModel
         vc.add_email(contact.DISPLAY_VALUE) if contact.DISPLAY_VALUE && !contact.DISPLAY_VALUE.strip.empty?
       end
       vc.add_uid(self.BARCODE,"X-BARCODE")
-      vc.add_uid(self.uri, "http://jangle.org/terms/#URI")
+      #vc.add_uid(self.uri, "http://jangle.org/terms/#URI")
     end
     vcard.to_s    
   end
@@ -80,11 +80,25 @@ class Borrower < AltoModel
     "#{self.FIRST_NAMES} #{self.SURNAME}"
   end
   
-  def entry(format)
-    relationships = {}
+  def updated
+    self.EDIT_DATE.xmlschema
+  end
+  
+  def created
+    self.CREATE_DATE.xmlschema
+  end
+  
+  def relationships
+    relationships = nil    
     if self.has_items
-      relationships['http://jangle.org/rel/related#Item'] = "#{self.uri}/items/"
+      relationships = {}
+      relationships['http://jangle.org/vocab/Entities#Item'] = "#{self.uri}/items/"
     end
+    relationships
+  end    
+  
+  def entry(format)
+
     
     {:id=>self.uri,:title=>self.title,:updated=>self.EDIT_DATE, :created=> self.CREATE_DATE, :content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],

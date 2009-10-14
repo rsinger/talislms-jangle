@@ -13,44 +13,44 @@
   if xslt %>
     "stylesheets":<%=xslt.to_json-%>,
   <% end %>
-  "data":[
+  "data":
     <% 
+    data = []
     categories = []
-    @entities.each do | entity | %>
-      {
-        "id":"<%= entity_uri(entity.identifier) -%>",
-        "title":<%= entity.title.to_json -%>,
-        <% if entity.respond_to?(:author) %>
-          "author":<%= entity.author.to_json -%>,
-        <% end %>
-        "updated":"<%= entity.updated -%>",
-        <% if entity.respond_to?(:created) %>
-          "created":<%= entity.created -%>,
-        <% end %>
-        "format":"<%= uri_from_format(@format) -%>",
-        <% 
+    @entities.each do | entity | 
+      ent = {}
+        ent["id"] = entity_uri(entity.identifier)
+        ent["title"] = entity.title
+        if entity.respond_to?(:author)
+          ent["author"] = entity.author
+        end
+        ent["updated"] = entity.updated
+        if entity.respond_to?(:created)
+          ent["created"] = entity.created
+        end
+        ent["format"] = uri_from_format(@format)
         alt_fmts = get_alternate_formats(@format, entity_uri(entity.identifier))
-        unless alt_fmts.empty?%>
-          "alternate_formats":<%= alt_fmts.to_json -%>,
-        <% end %>
-        <% if entity.relationships %>
-          "relationships":{
-            <% entity.relationships.each do | uri, path | %>
-              "<%= uri -%>":"<%= "#{entity_uri(entity.id)}#{path}"-%>",
-            <% end %>},
-        <% end %>
-        <% if entity.respond_to?(:links) %>
-          "links":<%= entity.links.to_json -%>,
-        <% end %>
-      "content_type":"<%= AppConfig.connector['record_types'][@format]['content-type'] -%>",                
-      "content":<%= render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity}).to_json -%>,
-      <% if entity.respond_to?(:categories) %>
-        "categories":<%= entity.categories.to_json -%>,
-        <% categories = (categories + entity.categories).uniq %>
-      <% end %>
-      
-      },
-    <% end %>
-    ],
+        unless alt_fmts.empty?
+          ent["alternate_formats"] = alt_fmts
+        end
+        if entity.relationships          
+
+            ent["relationships"] = {}
+            entity.relationships.each do | uri, path |
+              ent["relationships"][uri]= "#{entity_uri(entity.id)}#{path}"
+            end 
+        end
+        if entity.respond_to?(:links)
+          ent["links"] = entity.links
+        end
+      ent["content_type"] = AppConfig.connector['record_types'][@format]['content-type']
+      ent["content"] = render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity})
+      if entity.respond_to?(:categories)
+        ent["categories"] = entity.categories
+        categories = (categories + entity.categories).uniq
+      end
+      data << ent
+    end %>
+    <%= data.to_json -%>,
     "categories":<%= categories.to_json -%>
 }

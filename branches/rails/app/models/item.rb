@@ -43,7 +43,7 @@ class Item < AltoModel
   def relationships
     relationships = nil
     if self.WORK_ID
-      relationships = {'http://jangle.org/rel/related#Resource' => "#{self.harvest_item.id}/resources/"}
+      relationships = {'http://jangle.org/vocab/Entities#Resource' => "#{self.harvest_item.id}/resources/"}
     end
     relationships
   end

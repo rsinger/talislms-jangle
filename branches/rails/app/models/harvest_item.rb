@@ -133,11 +133,11 @@ class HarvestItem < ActiveRecord::Base
     combo 
   end
   
-  def self.find_by_filter(filter, offset, limit)
+  def self.fetch_entities_by_filter(filter, offset, limit)
     if filter == 'item'
-      items = self.find_all_by_item_type('item', :limit=>limit, offset=>offset, :order=>"edit_date desc")
+      items = self.find_all_by_item_type('item', :limit=>limit, :offset=>offset, :order=>"edit_date desc")
     elsif filter == 'holding'
-      items = self.find_all_by_item_type('holding', :limit=>limit, offset=>offset, :order=>"edit_date desc")      
+      items = self.find_all_by_item_type('holding', :limit=>limit, :offset=>offset, :order=>"edit_date desc")      
     end    
     self.fetch_originals(items)
   end  

@@ -1,6 +1,6 @@
 class ConnectorController < ApplicationController
   
-  before_filter :init_feed
+  before_filter :init_feed, :except=>:services
   def feed
     if params[:offset]
       @offset = params[:offset].to_i
@@ -46,12 +46,11 @@ class ConnectorController < ApplicationController
   
   def filter
     if params[:offset]
-      offset = params[:offset].to_i
+      @offset = params[:offset].to_i
     else
-      offset = 0
+      @offset = 0
     end
-
-    if offset == 0
+    if @offset == 0
       @entities = case params[:entity]
       when 'actors' then Borrower.find_by_filter(params[:filter], AppConfig.connector['page_size'])
       when 'collections' then Collection.find_by_filter(params[:filter], AppConfig.connector['page_size'])
@@ -75,14 +74,16 @@ class ConnectorController < ApplicationController
       end
 
     end
-    @feed.offset = offset
     if params[:entity] != 'items'
-      @feed.total_results = @entities.first.class.count
+      @total = @entities.first.class.count      
     else
-      @feed.total_resutls = HarvestItem.count
+      @total = HarvestItem.count
     end
-    populate_feed
-    render :json=>@feed.to_hash    
+    populate_entities
+    params[:format] = nil if params[:format]
+    respond_to do | fmt |
+      fmt.json {render :action=>'feed'}
+    end
   end
   
   # Returns entities specifically request by id, whether single ids, comma delimited lists or ranges
@@ -100,6 +101,13 @@ class ConnectorController < ApplicationController
     respond_to do | fmt |
       fmt.json {render :action=>'feed'}
     end
+  end
+  
+  def services
+    @config = AppConfig.connector
+    respond_to do | fmt |
+      fmt.json
+    end    
   end
 
   private

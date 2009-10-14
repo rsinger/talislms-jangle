@@ -1,6 +1,7 @@
 ## YAML Template.
 page_size: 100
 service_name: alto
+display_name: Alto LMS
 
 record_types:
     talis_soa_borrower:
@@ -64,12 +65,31 @@ record_types:
         uri: "http://jangle.org/vocab/formats#http://www.w3.org/2005/Atom"
         content-type: application/atom+xml
 
+context-sets:
+    dc:
+        identifier: info:srw/cql-context-set/1/dc-v1.1
+    rec:
+        identifier: info:srw/cql-context-set/2/rec-1.1
+    cql:
+        identifier: info:srw/cql-context-set/1/cql-v1.2
+
+categories:
+    opac:
+        scheme: "http://jangle.org/vocab/terms#dlf-ilsdi-resource"      
+    item:
+        scheme: "http://jangle.org/vocab/terms#copy"
+    holding:
+        scheme: "http://jangle.org/vocab/terms#copy"        
+    reservation:
+        scheme: "http://jangle.org/vocab/terms#hold"  
+
+
 entities:    
     actors:
         title: Borrowers
         record_types:            
             vcard: vcard.erb
-            talis_soa_borrower: talis_borrower.xml.builder
+            #talis_soa_borrower: talis_borrower.xml.builder
         search: false
         options:
             - get
@@ -104,6 +124,8 @@ entities:
         services:
             - items
             - collections
+        categories:
+            - opac
         
     items:
         title: Holdings records
@@ -119,6 +141,10 @@ entities:
         services:
             - resources
             - actors
+        categories:
+            - holding
+            - item
+            
     collections:
         title: Categories
         record_types:

@@ -28,7 +28,7 @@ class Collection < AltoModel
   def relationships
     relationships = nil
     if self.has_works
-      relationships = {'http://jangle.org/rel/related#Resource' => "/resources/"}
+      relationships = {'http://jangle.org/vocab/Entities#Resource' => "/resources/"}
     end
     relationships
   end

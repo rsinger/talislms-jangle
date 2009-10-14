@@ -69,10 +69,10 @@ class WorkMeta < AltoModel
     if self.items or self.has_collections
       relationships = {}
       if self.items
-        relationships['http://jangle.org/rel/related#Item'] = "#{self.uri}/items/"
+        relationships['http://jangle.org/vocab/Entities#Item'] = "#{self.uri}/items/"
       end
       if self.has_collections
-        relationships['http://jangle.org/rel/related#Collection'] = "#{self.uri}/collections/"
+        relationships['http://jangle.org/vocab/Entities#Collection'] = "#{self.uri}/collections/"
       end
     end      
     relationships
