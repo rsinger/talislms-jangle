@@ -7,4 +7,20 @@ class AltoModel < ActiveRecord::Base
     @uri = "#{base}/#{path}/#{self.id}"
     puts @uri
   end
+  
+  def delete
+    raise ActiveRecord::ReadOnlyRecord
+  end
+  
+  def destroy()
+    raise ActiveRecord::ReadOnlyRecord
+  end
+  
+  def save()
+    raise ActiveRecord::ReadOnlyRecord
+  end
+
+  def save!()
+    raise ActiveRecord::ReadOnlyRecord
+  end  
 end
