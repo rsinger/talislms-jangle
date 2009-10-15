@@ -15,7 +15,7 @@ class Borrower < AltoModel
   def to_vcard
     vcard = Vpim::Vcard::Maker.make2 do | vc |
       vc.add_name do | name |
-        name.family = self.SURNAME if self.SURNAME && !self.SURNAME.strip.empty?
+        name.family = self.SURNAME.gsub(/\017/,'') if self.SURNAME && !self.SURNAME.strip.empty?
         name.given = self.FIRST_NAMES if self.FIRST_NAMES && !self.FIRST_NAMES.strip.empty?
         name.prefix = self.STYLE if self.STYLE && !self.STYLE.strip.empty?
       end
@@ -77,15 +77,15 @@ class Borrower < AltoModel
   end
   
   def title
-    "#{self.FIRST_NAMES} #{self.SURNAME}"
+    "#{self.FIRST_NAMES} #{self.SURNAME.gsub(/\017/,'') if self.SURNAME}"
   end
   
   def updated
-    self.EDIT_DATE.xmlschema
+    self.EDIT_DATE.xmlschema if self.EDIT_DATE
   end
   
   def created
-    self.CREATE_DATE.xmlschema
+    self.CREATE_DATE.xmlschema if self.CREATE_DATE
   end
   
   def relationships
@@ -96,6 +96,10 @@ class Borrower < AltoModel
     end
     relationships
   end    
+  
+  def categories
+    @categories
+  end
   
   def entry(format)
 
@@ -108,4 +112,32 @@ class Borrower < AltoModel
   def self.find_eager(ids)
     self.find(ids, :include=>[:contacts, :contact_points])
   end
+  
+  def get_relationships(rel, offset, limit)
+    related_entities = []
+    if rel == 'items'
+      self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
+        loan.item.add_category('loan')
+        related_entities << loan.item
+      end
+      self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+        rsv.item.add_category('reservation')
+        related_entities << rsv.item
+      end
+    
+      self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
+        ill.item.add_category('interloan')
+        related_entities << ill.item
+      end     
+    end
+    related_entities
+  end
+  def self.cql_index_to_sql_column(index)  
+    column = case index
+      when "rec.identifier" then "BORROWER_ID"
+      when "rec.lastModificationDate" then "EDIT_DATE"
+      when "rec.creationDate" then "CREATE_DATE"
+      end
+    column
+  end  
 end

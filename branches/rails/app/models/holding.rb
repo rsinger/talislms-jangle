@@ -31,12 +31,13 @@ class Holding < AltoModel
   def relationships
     relationships = nil
     if self.WORK_ID
-      relationships = {'http://jangle.org/rel/related#Resources' => "#{self.id}/resources/"}
+      relationships = {'http://jangle.org/vocab/Entities#Resource' => "#{self.uri}/resources/"}
     end
   end  
   
   def categories
-    ['holding']
+    add_category('holding')
+    @categories
   end
   
   def to_marcxml
@@ -117,5 +118,9 @@ class Holding < AltoModel
   end
   def self.find_eager(ids)
     return self.find(ids, :include=>[:work_meta, :classification, :location])
+  end  
+  
+  def set_uri(base, path)
+    @uri = "#{base}/#{path}/#{self.harvest_item.id}"
   end  
 end

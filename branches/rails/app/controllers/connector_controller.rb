@@ -1,6 +1,6 @@
 class ConnectorController < ApplicationController
   
-  before_filter :init_feed, :except=>:services
+  before_filter :init_feed, :except=>[:services, :explain]
   def feed
     if params[:offset]
       @offset = params[:offset].to_i
@@ -50,16 +50,24 @@ class ConnectorController < ApplicationController
     else
       @offset = 0
     end
+    
     if @offset == 0
-      @entities = case params[:entity]
-      when 'actors' then Borrower.find_by_filter(params[:filter], AppConfig.connector['page_size'])
-      when 'collections' then Collection.find_by_filter(params[:filter], AppConfig.connector['page_size'])
-      when 'items'
+      if params[:entity] == 'items'
         sync_models
-        HarvestItem.fetch_entities_by_filter(params[:filter], 0, AppConfig.connector['page_size'])
-      when 'resources' then WorkMeta.find_by_filter(params[:filter], AppConfig.connector['page_size'])
       end
-      sync_models  unless params[:entity] == 'items'
+      base_class = case params[:entity]
+        when 'actors' then Borrower
+        when 'collections' then Collection
+        when 'items' then HarvestItem
+        when 'resources' then WorkMeta
+        end
+      @total = base_class.count_by_filter(params[:filter])
+      if params[:entity] == 'items'
+        @entities = base_class.fetch_entities_by_filter(params[:filter], 0, AppConfig.connector['page_size'])
+      else
+        @entities = base_class.find_by_filter(params[:filter], AppConfig.connector['page_size'])
+        sync_models
+      end
     else
       harvest_class = case params[:entity]
       when 'actors' then HarvestBorrower
@@ -68,16 +76,12 @@ class ConnectorController < ApplicationController
       when 'resources' then HarvestWork
       end
       unless harvest_class == Collection
-        @entities = harvest_class.fetch_entities_by_filter(params[:filter], offset, AppConfig.connector['page_size'])
+        @entities = harvest_class.fetch_entities_by_filter(params[:filter], @offset, AppConfig.connector['page_size'])
       else
-        @entities = Collection.find_by_filter(params[:filter], :limit=>AppConfig.connector['page_size'], :offset=>offset)
+        @entities = Collection.find_by_filter(params[:filter], :limit=>AppConfig.connector['page_size'], :offset=>@offset)
       end
+      @total = harvest_class.count_by_filter(params[:filter])
 
-    end
-    if params[:entity] != 'items'
-      @total = @entities.first.class.count      
-    else
-      @total = HarvestItem.count
     end
     populate_entities
     params[:format] = nil if params[:format]
@@ -103,11 +107,93 @@ class ConnectorController < ApplicationController
     end
   end
   
+  # Returns the entity relationship feed
+  def relationship
+    entities = case params[:scope]
+    when 'actors' then Borrower.find(id_translate(params[:id]))
+    when 'collections' then Collection.find(id_translate(params[:id]))
+    when 'items' then HarvestItem.fetch_originals(HarvestItem.find(id_translate(params[:id])))
+    when 'resources' then WorkMeta.find(id_translate(params[:id]))
+    end
+    
+    @offset = 0
+    @entities = []
+    entities.each do | entity |
+      @entities = @entities + entity.get_relationships(params[:entity], @offset, AppConfig.connector['page_size'])
+    end
+    puts @format
+    @entities.uniq!
+    @total = @entities.length
+    populate_entities
+    params[:format] = nil if params[:format]
+    respond_to do | fmt |
+      fmt.json {render :action=>'feed'}
+    end    
+    
+  end
+  
+  def explain
+    @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
+    @config = AppConfig.connector
+    respond_to do | fmt |
+      fmt.json
+    end
+  end
+  
+  # Returns a services request
   def services
     @config = AppConfig.connector
     respond_to do | fmt |
       fmt.json
     end    
+  end
+  
+  def search
+    parser = CqlRuby::CqlParser.new
+    cql = parser.parse(params[:query])
+
+    if params[:offset]
+      @offset = params[:offset].to_i
+    else
+      @offset = 0
+    end
+    if params[:count]
+      limit = params[:count].to_i
+    else
+      limit = AppConfig.connector['page_size']
+    end
+    
+
+    if params[:entity] == 'items'
+      sync_models
+    end
+    base_class = case params[:entity]
+      when 'actors' then Borrower
+      when 'collections' then Collection
+      when 'items' then HarvestItem
+      when 'resources' then WorkMeta
+      end
+    if cql.is_a?(CqlRuby::CqlSortNode)
+        sort = base_class.cql_sort(cql)
+        cql = cql.subtree
+    else
+      sort = nil
+    end
+    cql_query = base_class.cql_tree_walker(cql)  
+    @total = base_class.count(:conditions=>cql_query)
+    if params[:entity] == 'items'
+      @entities = base_class.fetch_entities_by_sql(cql_query, @offset, limit, sort)      
+    else
+      @entities = base_class.find(:all, :conditions=>cql_query, :offset=>@offset, :limit=>limit)
+    end
+
+
+    populate_entities
+    params[:format] = nil if params[:format]
+    respond_to do | fmt |
+      fmt.json {render :action=>'feed'}
+    end    
+    
   end
 
   private
@@ -124,7 +210,7 @@ class ConnectorController < ApplicationController
     if params[:format]
       return params[:format]
     end
-    return AppConfig.connector['entities'][params[:entity]]['record_types'].keys.first
+    AppConfig.connector['entities'][params[:entity]]['default']
   end
   
   def sync_models

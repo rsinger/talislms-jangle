@@ -1,5 +1,4 @@
-{
-  "type":"feed",
+{<% if action_name == 'search' %>"type":"search"<%else%>"type":"feed"<%end%>,
   "request":"<%= request.headers['REQUEST_URI'] -%>",
   "time":"<%= DateTime.now.xmlschema -%>",
   "offset":<%= @offset -%>,
@@ -34,18 +33,17 @@
           ent["alternate_formats"] = alt_fmts
         end
         if entity.relationships          
-
             ent["relationships"] = {}
             entity.relationships.each do | uri, path |
-              ent["relationships"][uri]= "#{entity_uri(entity.id)}#{path}"
+              ent["relationships"][uri]= "#{entity_uri(entity.identifier)}#{path}"
             end 
         end
         if entity.respond_to?(:links)
           ent["links"] = entity.links
         end
       ent["content_type"] = AppConfig.connector['record_types'][@format]['content-type']
-      ent["content"] = render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity})
-      if entity.respond_to?(:categories)
+      ent["content"] = render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity}).to_json
+      if entity.respond_to?(:categories) && entity.categories
         ent["categories"] = entity.categories
         categories = (categories + entity.categories).uniq
       end

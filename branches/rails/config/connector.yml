@@ -11,7 +11,7 @@ record_types:
         uri: http://jangle.org/vocab/formats#talis_soa_availability
         content-type: application/xml        
     dlfexpanded:
-        uri: "http://jangle.org/vocab/formats#http://diglib.org/ilsdi/1.0"
+        uri: "http://jangle.org/vocab/formats#http://diglib.org/ilsdi/1.1"
         content-type: application/xml
     daia:
         uri: "http://jangle.org/vocab/formats#http://ws.gbv.de/daia/"
@@ -90,12 +90,19 @@ entities:
         record_types:            
             vcard: vcard.erb
             #talis_soa_borrower: talis_borrower.xml.builder
-        search: false
+        default: vcard
+        search:
+            longname: Search Borrower records in Alto
+            description: Borrower records search.
+            syndicationright: closed
+            query: rec.identifier > 0        
+            indexes:
+                - rec.identifier
+                - rec.lastModificationDate
         options:
             - get
         services:
             - items
-            - resources
         
     resources:
         title: Bibliographic records
@@ -104,21 +111,20 @@ entities:
             marc: marc.erb
             mods: marc.erb
             dc: marc.erb
-            oai_dc: marc.erb            
+            oai_dc: marc.erb   
+        default: marcxml         
         search:
-            longname: Search Bibliographic records in OpenBiblio
+            longname: Search Bibliographic records in Alto
             description: Bibliographic records search.  Defaults to keyword anywhere.
-            tags: catalog library
+            tags: 
+                - catalog
+                - library
             syndicationright: open
-            query: thomas
-            parameters:
-                query: searchTerms?
-                field: field?
-                type: type?
-                from: from?
-                until: until?
-                count: count?
-                startIndex: startIndex?                
+            query: rec.identifier > 0        
+            indexes:
+                - rec.identifier
+                - rec.lastModificationDate
+            
         options:
             - get
         services:
@@ -135,7 +141,15 @@ entities:
             marcxml: marc.erb
             #talis_soa_availability: talis_availability.xml.builder
             daia: daia.xml.builder
-        search: false
+        default: marcxml
+        search:
+            longname: Search Item records in Alto
+            description: Item records search.
+            syndicationright: open
+            query: rec.identifier > 0        
+            indexes:
+                - rec.identifier
+                - rec.lastModificationDate
         options:
             - get
         services:
@@ -149,6 +163,7 @@ entities:
         title: Categories
         record_types:
             dc: dc.xml.builder
+        default: dc
         search: false
         options:
             - get

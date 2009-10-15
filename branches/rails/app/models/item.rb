@@ -5,9 +5,10 @@ class Item < AltoModel
   belongs_to :work_meta, :foreign_key=>"WORK_ID"
   has_many :borrowers, :through=>:loans
   has_many :loans, :foreign_key=>"ITEM_ID"
-  #has_many :reservations, :foreign_key=>"SATISFYING_ITEM_ID"
+  has_many :reservations, :foreign_key=>"SATISFYING_ITEM_ID"
   belongs_to :classification, :foreign_key=>"CLASS_ID"
   belongs_to :location, :foreign_key=>"ACTIVE_SITE_ID"
+  has_many :ill_requests, :foreign_key=>"ITEM_ID"
   
   attr_accessor :status, :loan_type, :harvest_item
   
@@ -43,13 +44,14 @@ class Item < AltoModel
   def relationships
     relationships = nil
     if self.WORK_ID
-      relationships = {'http://jangle.org/vocab/Entities#Resource' => "#{self.harvest_item.id}/resources/"}
+      relationships = {'http://jangle.org/vocab/Entities#Resource' => "#{self.uri}/resources/"}
     end
     relationships
   end
   
   def categories
-    ['item']
+    add_category('item')
+    @categories
   end
   
   def availability_message
@@ -97,7 +99,7 @@ class Item < AltoModel
     end
     location = MARC::DataField.new('852', scheme)
     unless self.ACTIVE_SITE_ID.nil? or self.ACTIVE_SITE_ID.empty?
-      location.append(MARC::Subfield.new('a', self.location.NAME))
+      location.append(MARC::Subfield.new('a', self.location.NAME)) if self.location and self.location.NAME
     end
     if self.classification
       location.append(MARC::Subfield.new('h', self.classification.CLASS_NUMBER))
@@ -187,6 +189,31 @@ class Item < AltoModel
     harvest_items.each do | hi |
       entities[hi.item_id].harvest_item = hi
     end
-  end  
+  end 
+  
+  def get_relationships(rel, offset, limit) 
+    related_entities = []
+    if rel == 'resources'
+      related_entities << self.work_meta
+    elsif rel == 'actors'
+      self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
+        loan.borrower.add_category('loan')
+        related_entities << loan.borrower
+      end
+      self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+        rsv.borrower.add_category('reservation')
+        related_entities << rsv.borrower
+      end
+    
+      self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
+        ill.borrower.add_category('interloan')
+        related_entities << ill.borrower
+      end      
+    end
+    related_entities
+  end
 
+  def set_uri(base, path)
+    @uri = "#{base}/#{path}/#{self.harvest_item.id}"
+  end   
 end

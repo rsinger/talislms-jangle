@@ -50,4 +50,5 @@ Rails::Initializer.run do |config|
   require RAILS_ROOT+'/lib/vcard'   
   require RAILS_ROOT+'/lib/namespaced_marc_xml'    
   require 'composite_primary_keys'
+  require 'cql_ruby'
 end

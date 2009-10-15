@@ -68,17 +68,17 @@ class HarvestWork < ActiveRecord::Base
     end
   end
   
-  def self.find_by_filter(filter, offset, limit)
+  def self.fetch_entities_by_filter(filter, offset, limit)
     if filter == 'opac'
-      works = self.find_all_by_suppress_from_opac_and_suppress_from_work('F','F', :limit=>limit, :offset=>offset, :order=>"edit_date desc")
+      works = self.find_all_by_suppress_from_opac_and_suppress_from_index('F','F', :limit=>limit, :offset=>offset, :order=>"edit_date desc")
     end    
     ids = []
     works.each do | result |
       ids << result.entity_id
     end
 
-    entities = self.find_eager(ids)
-    if entities.length < results.length
+    entities = WorkMeta.find_eager(ids)
+    if entities.length < ids.length
       mismatch = results.length - entities.length
       puts "Length mismatch: #{mismatch}"      
       ent_ids = []
@@ -90,7 +90,7 @@ class HarvestWork < ActiveRecord::Base
       bad_ids.each do | bad_id |
         puts "Bad id: #{bad_id}"
 
-        results.each do | result |
+        works.each do | result |
           if result.entity_id == id
             puts "Result match #{result}"
             d = self.delete(result.id)
@@ -99,8 +99,12 @@ class HarvestWork < ActiveRecord::Base
         end
 
       end
-      entities = entities + self.find_by_filter(filter, (offset+limit)-mismatch, mismatch)
+      entities = entities + self.fetch_entities_by_filter(filter, (offset+limit)-mismatch, mismatch)
     end    
     entities
   end  
+  
+  def self.count_by_filter(filter)
+    self.count(:conditions=>"suppress_from_opac = 'F' AND suppress_from_index = 'F'")
+  end
 end

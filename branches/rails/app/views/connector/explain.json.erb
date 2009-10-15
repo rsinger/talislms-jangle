@@ -1,0 +1,37 @@
+<%
+explain = {"type"=>"explain", "request" => request.headers['REQUEST_URI']}
+explain['shortname'] = @config['entities'][params[:entity]]['title']
+explain['description'] = @config['entities'][params[:entity]]['search']['description']
+explain['template'] = "#{@connector_base}/#{params[:entity]}/search/?offset={startIndex?}&count={count?}&query={searchTerms}&format={jangle:format?}"
+if contact = @config['entities'][params[:entity]]['search']['contact']
+  explain['contact'] = contact
+end
+if tags = @config['entities'][params[:entity]]['search']['tags']
+  explain['tags'] = tags
+end  
+if longname = @config['entities'][params[:entity]]['search']['longname']
+  explain['longname'] = longname
+end
+if @config['entities'][params[:entity]]['search']['query'] or @config['entities'][params[:entity]]['indexes']
+  explain['query'] = {}
+  if query = @config['entities'][params[:entity]]['search']['query']
+    explain['query']['example'] = query
+  end
+  if @config['entities'][params[:entity]]['search']['indexes']
+    explain['query']['context-sets'] = []
+    ctx = {}
+    @config['entities'][params[:entity]]['search']['indexes'].each do | index |      
+      pre,indexname = index.split(".")
+      unless ctx[pre]
+        ctx[pre] = {"name"=>pre, "identifier"=>@config['context-sets'][pre]['identifier'], "indexes" => []}
+      end
+      ctx[pre]["indexes"] << indexname
+    end
+    ctx.each_pair do |key, val|
+      explain['query']['context-sets'] << val
+    end
+  end
+end
+explain['outputencoding'] = "UTF-8"
+%>
+<%= explain.to_json -%>

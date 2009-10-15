@@ -43,5 +43,8 @@ ActionController::Routing::Routes.draw do |map|
   map.connect ':controller/services/', :action=>'services'  
   map.connect ':controller/:entity', :action=>'feed'
   map.connect ':controller/:entity/-/:filter', :action=>'filter'  
+  map.connect ':controller/:scope/:id/:entity', :action=>'relationship'
+  map.connect ':controller/:entity/explain', :action=>'explain'
+  map.connect ':controller/:entity/search', :action=>'search'    
   map.connect ':controller/:entity/:id', :action=>'show'
 end

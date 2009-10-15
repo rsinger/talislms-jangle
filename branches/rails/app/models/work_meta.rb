@@ -16,8 +16,8 @@ class WorkMeta < AltoModel
         return @content['245']['a']
       end
     else
-      w = Work.find(self.WORK_ID)
-      if w
+      w = Work.find_by_WORK_ID(self.WORK_ID)
+      if w && w.TITLE_DISPLAY
         return w.TITLE_DISPLAY.sub(/^\. \-/,'')
       end
     end
@@ -35,11 +35,11 @@ class WorkMeta < AltoModel
   end
   
   def to_marc
-    MARC::Record.new_from_marc(self.RAW_DATA).to_marc
+    MARC::Record.new_from_marc(self.RAW_DATA).to_marc if self.RAW_DATA
   end
   
-  def to_marcxml
-    MARC::Record.new_from_marc(self.RAW_DATA).to_xml
+  def to_marcxml    
+    MARC::Record.new_from_marc(self.RAW_DATA).to_xml if self.RAW_DATA
   end
 
   def to_mods
@@ -61,14 +61,14 @@ class WorkMeta < AltoModel
   end
   
   def updated
-    self.MODIFIED_DATE.xmlschema
+    self.MODIFIED_DATE.xmlschema if self.MODIFIED_DATE
   end
   
   def relationships
     relationships = nil
     if self.items or self.has_collections
       relationships = {}
-      if self.items
+      if self.items && !self.items.empty?
         relationships['http://jangle.org/vocab/Entities#Item'] = "#{self.uri}/items/"
       end
       if self.has_collections
@@ -111,9 +111,37 @@ class WorkMeta < AltoModel
   
   def self.find_by_filter(filter, limit)
     if filter == 'opac'
-      puts limit
       works = self.find_all_by_SUPPRESS_FROM_OPAC_and_SUPPRESS_FROM_INDEX('F','F', :limit=>limit, :order=>"MODIFIED_DATE desc")
     end    
     works
+  end
+  
+  def self.count_by_filter(filter)
+    if filter == 'opac'
+      works = self.count(:conditions=>"SUPPRESS_FROM_OPAC = 'F' AND SUPPRESS_FROM_INDEX = 'F'")
+    end    
+    works
+  end  
+  def get_relationships(rel, offset, limit) 
+    related_entities = []
+    if rel == 'items'
+      if self.items
+        related_entities = related_entities + self.items
+      end
+      if self.holdings
+        related_entities = related_entities + self.holdings
+      end
+    elsif rel == 'collections'
+      related_entities = self.collections
+    end
+    related_entities
+  end
+  
+  def self.cql_index_to_sql_column(index)  
+    column = case index
+      when "rec.identifier" then "WORK_ID"
+      when "rec.lastModificationDate" then "MODIFIED_DATE"
+      end
+    column
   end
 end

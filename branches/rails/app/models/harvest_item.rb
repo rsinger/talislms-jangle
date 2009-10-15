@@ -141,4 +141,74 @@ class HarvestItem < ActiveRecord::Base
     end    
     self.fetch_originals(items)
   end  
+  def self.count_by_filter(filter)
+    self.count(:conditions=>["item_type = ?", filter])
+  end  
+  
+  def self.fetch_entities_by_sql(sql, offset, limit, sort)
+    items = self.find(:all, :conditions=>sql, :offset=>offset, :limit=>limit, :order=>sort)
+    self.fetch_originals(items)
+  end
+  
+  def self.cql_index_to_sql_column(index)  
+    column = case index
+      when "rec.identifier" then "id"
+      when "rec.lastModificationDate" then "edit_date"
+      end
+    column
+  end  
+  
+  
+  def self.cql_tree_walker(cql_node)
+    if cql_node.is_a?(CqlRuby::CqlTermNode)
+      return ["#{cql_index_to_sql_column(cql_node.index)} #{cql_relation_to_sql_relation(cql_node.relation)} ?", [cql_value_to_sql_value(cql_index_to_sql_column(cql_node.index), cql_node.term)]]
+    end   
+    left_sql, left_args = cql_tree_walker(cql_node.left_node)
+    right_sql, right_args = cql_tree_walker(cql_node.right_node)
+    if cql_node.is_a?(CqlRuby::CqlOrNode)
+      boolean = "OR"
+    elsif cql_node.is_a?(CqlRuby::CqlAndNode)
+      boolean = "AND"
+    end
+    return ["(#{left_sql} #{boolean} #{right_sql})", *[left_args + right_args].flatten]
+  end
+  
+  def self.cql_sort(sort_node)
+    sort_strings = []
+    sort_node.keys.each do | sort |
+      string = cql_index_to_sql_column(sort.base)
+      string << " "
+      sort.modifiers.each do | mod |
+        string << case mod.type
+        when "sort.ascending" then "ASC"
+        when "sort.descending" then "DESC"
+        end
+      end
+      sort_strings << string
+    end
+    return sort_strings.join(", ")
+  end
+  
+  def self.cql_relation_to_sql_relation(cql_rel)
+    set = cql_rel.modifier_set
+    relation = set.base
+    sql_rel = case relation
+    when "==" then "="
+    when "<>" then "!="
+    else 
+      cql_rel.modifier_set.base
+    end
+    sql_rel
+  end
+  
+  def self.cql_value_to_sql_value(col, term)
+    column = self.columns_hash[col]
+    value = case column.type.to_s
+    when "integer" then term.to_i
+    when "datetime" then DateTime.parse(term)
+    when "date" then DateTime.parse(term)
+    else term
+    end
+    value
+  end  
 end

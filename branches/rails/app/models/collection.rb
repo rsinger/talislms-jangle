@@ -58,4 +58,11 @@ class Collection < AltoModel
     end
     collections
   end  
+  def get_relationships(rel, offset, limit) 
+    related_entities = []
+    if rel == 'resources'
+      related_entities = self.work_metas.find(:all, :limit=>limit, :offset=>offset)
+    end
+    related_entities
+  end  
 end
