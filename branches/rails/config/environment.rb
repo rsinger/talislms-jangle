@@ -42,13 +42,14 @@ Rails::Initializer.run do |config|
   # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}')]
   # config.i18n.default_locale = :de
   require 'jdbc_adapter'
-  require 'active_record'
-  require 'jrexml'
-  require 'marc'
+  config.gem 'jrexml'
+  config.gem 'marc'
+  config.gem 'vpim'
+  #config.gem "activerecord-jdbch2-adapter"
+  #config.gem "jdbc-h2"
   require RAILS_ROOT+'/lib/jdbcsybase_adapter'
-  require RAILS_ROOT+'/lib/connector_responses'  
   require RAILS_ROOT+'/lib/vcard'   
   require RAILS_ROOT+'/lib/namespaced_marc_xml'    
-  require 'composite_primary_keys'
-  require 'cql_ruby'
+  config.gem 'composite_primary_keys'
+  config.gem 'cql-ruby', :lib => 'cql_ruby'
 end

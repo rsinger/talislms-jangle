@@ -1,3 +1,4 @@
+require 'marc'
 class MARC::Record
   def to_xml
     marcxml = MARC::XMLWriter.encode(self, :include_namespace => true)
