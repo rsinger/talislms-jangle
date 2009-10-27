@@ -41,15 +41,12 @@ Rails::Initializer.run do |config|
   # The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.
   # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}')]
   # config.i18n.default_locale = :de
-  require 'jdbc_adapter'
-  config.gem 'jrexml'
-  config.gem 'marc'
+  #require 'jdbc_adapter'
+  config.gem 'jrexml', ">= 0.5.3"
+  config.gem 'marc', ">= 0.3.0"
   config.gem 'vpim'
   #config.gem "activerecord-jdbch2-adapter"
-  #config.gem "jdbc-h2"
-  require RAILS_ROOT+'/lib/jdbcsybase_adapter'
-  require RAILS_ROOT+'/lib/vcard'   
-  require RAILS_ROOT+'/lib/namespaced_marc_xml'    
+  #config.gem "jdbc-h2"    
   config.gem 'composite_primary_keys'
   config.gem 'cql-ruby', :lib => 'cql_ruby'
 end

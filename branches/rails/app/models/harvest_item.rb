@@ -97,7 +97,7 @@ class HarvestItem < ActiveRecord::Base
   end
   
   def self.holdings_synced?
-    return true if Holding.count_by_sql("SELECT COUNT(DISTINCT HOLDINGS_ID) FROM SITE_SERIAL_HOLDINGS, WORKS_META WHERE HOLDINGS_ID >= 0 AND SITE_SERIALS_HOLDINGS.WORK_ID = WORKS_META.WORK_ID") <= self.count_by_sql("SELECT count(id) FROM harvest_items WHERE item_type = 'holding'")
+    return true if Holding.count_by_sql("SELECT COUNT(DISTINCT HOLDINGS_ID) FROM SITE_SERIAL_HOLDINGS, WORKS_META WHERE HOLDINGS_ID >= 0 AND SITE_SERIAL_HOLDINGS.WORK_ID = WORKS_META.WORK_ID") <= self.count_by_sql("SELECT count(id) FROM harvest_items WHERE item_type = 'holding'")
     false
   end
   
