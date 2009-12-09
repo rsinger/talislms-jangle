@@ -1,0 +1,15 @@
+#summary Installing the Rails-based connector
+#labels installation,Featured,Rails,JRuby
+
+= Introduction =
+
+The TalisLMS connector is migrating from Groovy/Grails to JRuby.  The current implementation uses Rails.  Here are the steps needed to get a basic connector up and running.
+
+
+= Preparing your environment =
+
+One big difference between the Grails and Rails connector designs is that the latter uses a secondary RDBMS to cache parts of the Sybase database (mainly for paging).  This is being refactored out of the project (in favor of Lucene/Solr), but until that is stable, a second RDBMS is required.  MySQL, PostgreSQL or SQLite are recommended.
+
+A JDK that supports JRuby is also required.  [http://kenai.com/projects/jruby/pages/JRubyOnUbuntu This page explains a gotcha in Ubuntu].  Sun's JDK or OpenJDK will work fine.
+
+  # Install JRuby:  [http://jruby.org/download download here]
