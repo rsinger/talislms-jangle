@@ -16,3 +16,17 @@ A JDK that supports JRuby is also required.  [http://kenai.com/projects/jruby/pa
     * Install somewhere on your system (i.e. _/opt/local/jruby_) and add _/path/to/jruby/bin_ to your $PATH
   # Update gems to most recent version: _$ sudo jruby -S gem update --system_
   # Install the gems needed to run the connector:  _$ sudo jruby -S gem install rails activerecord-jdbc marc jrexml vpim composite_primary_keys cql-ruby mongrel_
+  # Install the JRuby JDBC driver for your secondary RDBMS of choice:  _$ sudo jruby -S gem install jdbc-sqlite3_ (or jdbc-mysql, jdbc-postgres, etc.)
+  # Check the Rails-connector branch out of svn: _$ svn co http://talislms-jangle.googlecode.com/svn/branches/rails/ talislms-connector_
+  # Rename talislms-connector/config/database.yml-dist to database.yml and edit it to reflect your Alto Sybase connection and local cache database setup.
+  # _$ cd /path/to/talislms-connector_
+  # _$ jruby -S rake db:create_
+  # _$ jruby -S rake db:migrate_
+  # _$ jruby ./script/console_
+  # _>> [HarvestWork,HarvestItem,HarvestBorrower].each {|h| h.sync(true) }_
+  # Pour yourself a very large drink or consider going on holiday for a while.  The last step takes a while.  It's caching your Sybase DB to the local RDBMS.
+  # [http://code.google.com/p/talislms-jangle/issues/list File a bug report if you run into a problem]
+  # _>> exit_
+  # _$ jruby ./script/server_
+  # Point an HTTP client at http://connectorhost/connector/resources/ and, hopefully, see the resulting JSON feed.
+  
