@@ -13,3 +13,6 @@ One big difference between the Grails and Rails connector designs is that the la
 A JDK that supports JRuby is also required.  [http://kenai.com/projects/jruby/pages/JRubyOnUbuntu This page explains a gotcha in Ubuntu].  Sun's JDK or OpenJDK will work fine.
 
   # Install JRuby:  [http://jruby.org/download download here]
+    * Install somewhere on your system (i.e. _/opt/local/jruby_) and add _/path/to/jruby/bin_ to your $PATH
+  # Update gems to most recent version: _$ sudo jruby -S gem update --system_
+  # Install the gems needed to run the connector:  _$ sudo jruby -S gem install rails activerecord-jdbc marc jrexml vpim composite_primary_keys cql-ruby mongrel_
