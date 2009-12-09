@@ -16,7 +16,7 @@ A JDK that supports JRuby is also required.  [http://kenai.com/projects/jruby/pa
     * Install somewhere on your system (i.e. _/opt/local/jruby_) and add _/path/to/jruby/bin_ to your $PATH
   # Update gems to most recent version: _$ sudo jruby -S gem update --system_
   # Install the gems needed to run the connector:  _$ sudo jruby -S gem install rails activerecord-jdbc marc jrexml vpim composite_primary_keys cql-ruby mongrel_
-  # Install the JRuby JDBC driver for your secondary RDBMS of choice:  _$ sudo jruby -S gem install jdbc-sqlite3_ (or jdbc-mysql, jdbc-postgres, etc.)
+  # Install the JRuby JDBC driver for your secondary RDBMS of choice:  _$ sudo jruby -S gem install activerecord-jdbcsqlite3-adapter jdbc-sqlite3_ (or activerecord-jdbcsmysql-adapter/jdbc-mysql, activerecord-jdbcpostgres-adapter/jdbc-postgres, etc.)
   # Check the Rails-connector branch out of svn: _$ svn co http://talislms-jangle.googlecode.com/svn/branches/rails/ talislms-connector_
   # Rename talislms-connector/config/database.yml-dist to database.yml and edit it to reflect your Alto Sybase connection and local cache database setup.
   # _$ cd /path/to/talislms-connector_
