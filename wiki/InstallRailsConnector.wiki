@@ -23,7 +23,7 @@ A JDK that supports JRuby is also required.  [http://kenai.com/projects/jruby/pa
   # _$ jruby -S rake db:create_
   # _$ jruby -S rake db:migrate_
   # _$ jruby ./script/console_
-  # _>> [HarvestWork,HarvestItem,HarvestBorrower].each {|h| h.sync(true) }_
+  # _>> `[HarvestWork,HarvestItem,HarvestBorrower`].each {|h| h.sync(true) }_
   # Pour yourself a very large drink or consider going on holiday for a while.  The last step takes a while.  It's caching your Sybase DB to the local RDBMS.
   # [http://code.google.com/p/talislms-jangle/issues/list File a bug report if you run into a problem]
   # _>> exit_
