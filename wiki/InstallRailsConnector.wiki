@@ -8,25 +8,18 @@ The TalisLMS connector is migrating from Groovy/Grails to JRuby.  The current im
 
 = Preparing your environment =
 
-One big difference between the Grails and Rails connector designs is that the latter uses a secondary RDBMS to cache parts of the Sybase database (mainly for paging).  This is being refactored out of the project (in favor of Lucene/Solr), but until that is stable, a second RDBMS is required.  MySQL, PostgreSQL or SQLite are recommended.
 
-A JDK that supports JRuby is also required.  [http://kenai.com/projects/jruby/pages/JRubyOnUbuntu This page explains a gotcha in Ubuntu].  Sun's JDK or OpenJDK will work fine.
+A JDK that supports JRuby is required.  [http://kenai.com/projects/jruby/pages/JRubyOnUbuntu This page explains a gotcha in Ubuntu].  Sun's JDK or OpenJDK will work fine.
 
   # Install JRuby:  [http://jruby.org/download download here]
     * Install somewhere on your system (i.e. _/opt/local/jruby_) and add _/path/to/jruby/bin_ to your $PATH
   # Update gems to most recent version: _$ sudo jruby -S gem update --system_
   # Install the gems needed to run the connector:  _$ sudo jruby -S gem install rails activerecord-jdbc marc jrexml vpim composite_primary_keys cql-ruby mongrel_
-  # Install the JRuby JDBC driver for your secondary RDBMS of choice:  _$ sudo jruby -S gem install activerecord-jdbcsqlite3-adapter jdbc-sqlite3_ (or activerecord-jdbcsmysql-adapter/jdbc-mysql, activerecord-jdbcpostgres-adapter/jdbc-postgres, etc.)
   # Check the Rails-connector branch out of svn: _$ svn co http://talislms-jangle.googlecode.com/svn/branches/rails/ talislms-connector_
-  # Rename talislms-connector/config/database.yml-dist to database.yml and edit it to reflect your Alto Sybase connection and local cache database setup.
+  # Rename talislms-connector/config/database.yml-dist to database.yml and edit it to reflect your Alto Sybase connection.
   # _$ cd /path/to/talislms-connector_
-  # _$ jruby -S rake db:create_
-  # _$ jruby -S rake db:migrate_
-  # _$ jruby ./script/console_
-  # _>> `[HarvestWork,HarvestItem,HarvestBorrower`].each {|h| h.sync(true) }_
-  # Pour yourself a very large drink or consider going on holiday for a while.  The last step takes a while.  It's caching your Sybase DB to the local RDBMS.
-  # [http://code.google.com/p/talislms-jangle/issues/list File a bug report if you run into a problem]
-  # _>> exit_
   # _$ jruby ./script/server_
-  # Point an HTTP client at http://connectorhost/connector/resources/ and, hopefully, see the resulting JSON feed.
+  # Pour yourself a very large drink or consider going on holiday for a while.  The last step takes a while.  It's caching your Sybase DB to the embedded Solr cache.
+  # [http://code.google.com/p/talislms-jangle/issues/list File a bug report if you run into a problem]
+  # Point an HTTP client at http://connectorhost:3000/connector/resources/ and, hopefully, see the resulting JSON feed.
   
