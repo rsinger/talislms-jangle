@@ -1,4 +1,4 @@
-class Borrower < AltoModel
+class Borrower < AltoModel  
   set_table_name 'BORROWER'
   set_primary_key 'BORROWER_ID'
   has_many :items, :through=>:loans
@@ -12,6 +12,11 @@ class Borrower < AltoModel
   #  {:SURNAME=>:string}, {:FIRST_NAMES=>:string},{:EDIT_DATE=>:date}]
   attr_accessor :has_items, :current_address
   alias :identifier :id
+  
+  def self.last_modified_field
+    "EDIT_DATE"
+  end
+  
   def to_vcard
     vcard = Vpim::Vcard::Maker.make2 do | vc |
       vc.add_name do | name |
@@ -48,6 +53,16 @@ class Borrower < AltoModel
     vcard.to_s    
   end
   
+  def to_doc
+    edit_date = (self.EDIT_DATE||self.CREATE_DATE||Time.now)
+    edit_date.utc
+    doc = {:id=>"Borrower_#{self.BORROWER_ID}", :last_modified=>edit_date.xmlschema, :model=>self.class.to_s, :model_id=>self.BORROWER_ID}
+    doc[:type_id] = self.TYPE_ID
+    doc[:status_id] = self.STATUS    
+    doc[:title] = self.title.gsub(/\020/,'')
+    doc
+  end  
+  
   def self.find_associations(entity_list)
     ids = []
     entities = {}
@@ -81,7 +96,7 @@ class Borrower < AltoModel
   end
   
   def updated
-    self.EDIT_DATE.xmlschema if self.EDIT_DATE
+    (self.EDIT_DATE||self.CREATE_DATE||Time.now).xmlschema
   end
   
   def created
@@ -110,7 +125,7 @@ class Borrower < AltoModel
   end
   
   def self.find_eager(ids)
-    self.find(ids, :include=>[:contacts, :contact_points])
+    self.find(:all, :conditions=>{:BORROWER_ID => ids}, :include=>[:contacts, :contact_points])
   end
   
   def get_relationships(rel, offset, limit)

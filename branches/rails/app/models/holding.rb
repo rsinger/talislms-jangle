@@ -13,24 +13,38 @@ class Holding < AltoModel
     "Holdings not available"
   end
   
+  def to_doc
+    if self.work_meta && self.work_meta.MODIFIED_DATE
+      edit_date = self.work_meta.MODIFIED_DATE
+    else
+      edit_date = Time.now
+    end
+    edit_date.utc
+    doc = {:id=>"Holding_#{self.HOLDINGS_ID}", :last_modified=>edit_date.xmlschema, :model=>self.class.to_s, :model_id=>self.HOLDINGS_ID}
+    doc[:location_id] = self.LOCATION_ID
+    doc
+  end
+    
   def daia_service
     'presentation'
   end
   
   def identifier
-    unless self.harvest_item
-      self.harvest_item =  HarvestItem.find_by_holding_id(self.id)
-    end    
-    self.harvest_item.id
+    "H-#{self.id}"
   end
   
   def updated
-    self.work_meta.MODIFIED_DATE.xmlschema
+    if self.work_meta && self.work_meta.MODIFIED_DATE
+      u = self.work_meta.MODIFIED_DATE
+    else
+     u = Time.now
+   end
+   u.xmlschema
   end
   
   def relationships
     relationships = nil
-    if self.WORK_ID
+    if self.work_meta
       relationships = {'http://jangle.org/vocab/Entities#Resource' => "#{self.uri}/resources/"}
     end
   end  
@@ -49,18 +63,18 @@ class Holding < AltoModel
   end
   
   def marc
-    unless self.harvest_item
-      self.harvest_item =  HarvestItem.find_by_holding_id(self.id)
-    end
+
     record = MARC::Record.new
     record.leader[5] = 'n'    
     record.leader[6] = 'y'
     record.leader[9] = 'a'
     record.leader[17] = '3'
     record.leader[18] = 'i'
-    record << MARC::ControlField.new('001',self.harvest_item.id.to_s)
+    record << MARC::ControlField.new('001',self.identifier)
     record << MARC::ControlField.new('004',self.WORK_ID.to_s)
-    record << MARC::ControlField.new('005',self.work_meta.MODIFIED_DATE.strftime("%Y%m%d%H%M%S.0"))
+    if self.work_meta && self.work_meta.MODIFIED_DATE
+      record << MARC::ControlField.new('005',self.work_meta.MODIFIED_DATE.strftime("%Y%m%d%H%M%S.0"))
+    end
     scheme = case self.classification.CLASS_AREA_ID.strip
     when 'DDC' then "1"
     when 'LC' then "0"
@@ -106,21 +120,37 @@ class Holding < AltoModel
   end 
   
   def self.find_associations(entity_list)
-    entities = {}
-    entity_list.each do | entity |
-      next unless entity.is_a?(Holding)
-      entities[entity.id] = entity 
-    end   
-    harvest_items = HarvestItem.find_all_by_holding_id(entities.keys)  
-    harvest_items.each do | hi |
-      entities[hi.holding_id].harvest_item = hi
-    end    
+ 
   end
   def self.find_eager(ids)
-    return self.find(ids, :include=>[:work_meta, :classification, :location])
+    return self.find(:all, :conditions=>{:HOLDINGS_ID=>ids}, :include=>[:work_meta, :classification, :location])
   end  
   
   def set_uri(base, path)
     @uri = "#{base}/#{path}/#{self.harvest_item.id}"
+  end  
+  
+  def self.sync_from(timestamp)
+    while rows = Holding.find_by_sql(["SELECT TOP 1000 h.*, w.MODIFIED_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS_META w WHERE h.WORK_ID = w.WORK_ID AND w.MODIFIED_DATE >= ? ORDER BY w.MODIFIED_DATE", timestamp])
+      break if rows.empty?
+      puts "Updating #{self.to_s} from timestamp: #{timestamp}"
+      docs = []
+      rows.each {|row| docs << row.to_doc }
+      docs.each {|doc| AppConfig.solr.add(doc)}
+      timestamp = rows.last.work_meta.MODIFIED_DATE unless rows.empty?
+      AppConfig.solr.commit
+      results = AppConfig.solr.select :q=>"model:#{docs.last[:model]}"
+      puts "#{results["response"]["numFound"]} #{docs.last[:model]} documents in Solr index"
+      break if rows.empty? or rows.length == 1
+    end    
+    AppConfig.solr.commit    
+  end  
+  
+  def get_relationships(rel, offset, limit) 
+    related_entities = []
+    if rel == 'resources'
+      related_entities << self.work_meta
+    end
+    related_entities
   end  
 end

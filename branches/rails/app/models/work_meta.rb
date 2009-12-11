@@ -7,7 +7,11 @@ class WorkMeta < AltoModel
   has_many :holdings, :foreign_key=>"WORK_ID"
   attr_accessor :has_collections
   alias :identifier :id
-
+  
+  def last_modified_field
+    "MODIFIED_DATE"
+  end
+  
   def title
     generate_content unless @content
     title = nil
@@ -23,6 +27,15 @@ class WorkMeta < AltoModel
     end
     "Title not available"
   end
+  
+  def to_doc
+    edit_date = (self.MODIFIED_DATE||Time.now)
+    edit_date.utc
+    doc = {:id=>"WorkMeta_#{self.WORK_ID}", :last_modified=>edit_date.xmlschema, :model=>self.class.to_s, :model_id=>self.WORK_ID}
+    doc[:category] = self.categories
+    doc[:title] = self.title.gsub(/\020/,'')
+    doc
+  end  
   
   def marc_content(format)
     generate_content unless @content
@@ -61,7 +74,7 @@ class WorkMeta < AltoModel
   end
   
   def updated
-    self.MODIFIED_DATE.xmlschema if self.MODIFIED_DATE
+    (self.MODIFIED_DATE||Time.now).xmlschema
   end
   
   def relationships
@@ -106,7 +119,7 @@ class WorkMeta < AltoModel
   end
   
   def self.find_eager(ids)
-    return self.find(ids, :include=>[:items])
+    return self.find(:all, :conditions=>{:WORK_ID=>ids}, :include=>[:items])
   end
   
   def self.find_by_filter(filter, limit)

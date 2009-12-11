@@ -42,7 +42,7 @@
           ent["links"] = entity.links
         end
       ent["content_type"] = AppConfig.connector['record_types'][@format]['content-type']
-      ent["content"] = render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity}).to_json
+      ent["content"] = render(:partial=>'connector/_partials/'+determine_partial(@format), :locals=>{:entity=>entity})
       if entity.respond_to?(:categories) && entity.categories
         ent["categories"] = entity.categories
         categories = (categories + entity.categories).uniq

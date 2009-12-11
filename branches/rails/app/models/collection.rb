@@ -22,7 +22,7 @@ class Collection < AltoModel
   end
   
   def updated
-    DateTime.now
+    Time.now.xmlschema
   end
   
   def relationships
@@ -35,7 +35,7 @@ class Collection < AltoModel
   def entry(format)
     relationships = {}
   
-    {:id=>self.uri,:title=>self.NAME,:updated=>DateTime.now,:content=>self.send(format.to_sym),
+    {:id=>self.uri,:title=>self.NAME,:updated=>updated,:content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],:relationships=>relationships,
       :content_type=>AppConfig.connector['record_types'][format]['content-type']}
   end
@@ -52,9 +52,12 @@ class Collection < AltoModel
     end
   end  
   
-  def self.find_by_filter(filter, limit, offset=0)
+  def self.find_by_filter(filter, opts={})
+    opts[:offset] ||=0
+    opts[:limit] ||= AppConfig.connector['page_size']
     if filter == 'ill'
-      collections = self.find_all_by_INTERLOANS('T',:limit=>limit, :offset=>offset)
+      collections = ResultSet.new(self.find_all_by_INTERLOANS('T',:limit=>opts[:limit], :offset=>opts[:offset]))
+      collections.total_results = self.count_by_INTERLOANS('T')
     end
     collections
   end  

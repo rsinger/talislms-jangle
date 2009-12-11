@@ -12,6 +12,10 @@ class Item < AltoModel
   
   attr_accessor :status, :loan_type, :harvest_item
   
+  def self.last_modified_field
+    "EDIT_DATE"
+  end
+  
   def title
     case available?
     when true then "Available"
@@ -19,15 +23,23 @@ class Item < AltoModel
     end
   end
 
+  def to_doc
+    edit_date = (self.EDIT_DATE||self.CREATE_DATE||Time.now)
+    edit_date.utc
+    doc = {:id=>"Item_#{self.ITEM_ID}", :last_modified=>edit_date.xmlschema, :model=>self.class.to_s, :model_id=>self.ITEM_ID}
+    doc[:type_id] = self.TYPE_ID
+    doc[:status_id] = self.STATUS_ID    
+    doc[:location_id] = self.ACTIVE_SITE_ID
+    doc[:format_id] = self.FORMAT_ID
+    doc
+  end
+  
   def identifier
-    unless self.harvest_item
-      self.harvest_item =  HarvestItem.find_by_item_id(self.id)
-    end    
-    self.harvest_item.id
+    "I-#{self.id}"
   end
   
   def updated
-    self.EDIT_DATE.xmlschema
+    (self.EDIT_DATE||self.CREATE_DATE||Time.now).xmlschema
   end
   
   def daia_service
@@ -63,7 +75,7 @@ class Item < AltoModel
   
   def entry(format)
 
-    {:id=>self.uri,:title=>self.NAME,:updated=>self.EDIT_DATE,:content=>self.send(format.to_sym),
+    {:id=>self.uri,:title=>title,:updated=>self.EDIT_DATE,:content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],:relationships=>relationships,
       :content_type=>AppConfig.connector['record_types'][format]['content-type']}
   end  
@@ -77,18 +89,15 @@ class Item < AltoModel
   end
   
   def marc
-    unless self.harvest_item
-      self.harvest_item =  HarvestItem.find_by_item_id(self.id)
-    end
     record = MARC::Record.new
     record.leader[5] = 'n'    
     record.leader[6] = 'x'
     record.leader[9] = 'a'
     record.leader[17] = '1'
     record.leader[18] = 'i'
-    record << MARC::ControlField.new('001',self.harvest_item.id.to_s)
+    record << MARC::ControlField.new('001',self.identifier)
     record << MARC::ControlField.new('004',self.WORK_ID.to_s)
-    record << MARC::ControlField.new('005',self.EDIT_DATE.strftime("%Y%m%d%H%M%S.0"))
+    record << MARC::ControlField.new('005',(self.EDIT_DATE||self.CREATE_DATE).strftime("%Y%m%d%H%M%S.0"))
     if self.classification
       scheme = case self.classification.CLASS_AREA_ID.strip
       when 'DDC' then "1"
@@ -152,7 +161,7 @@ class Item < AltoModel
   end
   
   def self.find_eager(ids)
-    return self.find(ids, :include=>[:loans, :classification, :location])
+    return self.find(:all, :conditions=>{:ITEM_ID=>ids}, :include=>[:loans, :classification, :location])
   end  
   
   def self.find_associations(entity_list)
@@ -175,7 +184,6 @@ class Item < AltoModel
     loan_type_ids.uniq!
     states = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(6,status_ids)
     loan = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(1,loan_type_ids)  
-    harvest_items = HarvestItem.find_all_by_item_id(entities.keys)  
     states.each do | state |
       status_map[state.TYPE_STATUS].each do | entity |
         entity.status = state
@@ -185,9 +193,6 @@ class Item < AltoModel
       loan_type_map[l.TYPE_STATUS].each do | entity |
         entity.loan_type = l
       end
-    end
-    harvest_items.each do | hi |
-      entities[hi.item_id].harvest_item = hi
     end
   end 
   
@@ -214,6 +219,6 @@ class Item < AltoModel
   end
 
   def set_uri(base, path)
-    @uri = "#{base}/#{path}/#{self.harvest_item.id}"
+    @uri = "#{base}/#{path}/#{identifier}"
   end   
 end

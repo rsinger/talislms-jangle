@@ -3,6 +3,9 @@ page_size: 100
 service_name: alto
 display_name: Alto LMS
 
+solr_opts:
+    :home_dir: "./lib/apache-solr-1.4.0"
+
 record_types:
     talis_soa_borrower:
         uri: http://jangle.org/vocab/formats#talis_soa_borrower

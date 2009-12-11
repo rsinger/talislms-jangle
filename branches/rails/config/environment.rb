@@ -44,9 +44,16 @@ Rails::Initializer.run do |config|
   #require 'jdbc_adapter'
   config.gem 'jrexml', ">= 0.5.3"
   config.gem 'marc', ">= 0.3.0"
-  config.gem 'vpim'
-  #config.gem "activerecord-jdbch2-adapter"
-  #config.gem "jdbc-h2"    
+  config.gem 'vpim' 
   config.gem 'composite_primary_keys'
   config.gem 'cql-ruby', :lib => 'cql_ruby'
+  config.gem 'rsolr'
+  Dir['lib/apache-solr-1.4.0/dist/*.jar'].each{|jar|require jar}
+  Dir['lib/apache-solr-1.4.0/lib/*.jar'].each{|jar|require jar}  
+  require 'rsolr'
+  AppConfig.solr = RSolr.direct_connect(AppConfig.connector['solr_opts'])
+end
+
+at_exit do
+  AppConfig.solr.connection.close
 end
