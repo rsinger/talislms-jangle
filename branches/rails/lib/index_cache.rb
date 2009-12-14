@@ -345,6 +345,7 @@ class ItemHoldingCache < IndexCache
   def self.collate(items, holdings)
     item_holdings = ResultSet.new
     items.each do | item |
+      puts item
       item_holdings.each do |ih|
         if item.updated > ih.updated
           item_holdings.insert(item_holdings.index(ih), item)
@@ -356,6 +357,7 @@ class ItemHoldingCache < IndexCache
       end      
     end
     holdings.each do | holding |
+      puts holding
       item_holdings.each do |ih|
         if holding.updated > ih.updated
           item_holdings.insert(item_holdings.index(ih), holding)
