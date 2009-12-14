@@ -359,6 +359,8 @@ class ItemHoldingCache < IndexCache
     holdings.each do | holding |
       puts holding
       item_holdings.each do |ih|
+        puts holding.updated
+        puts ih.updated
         if holding.updated > ih.updated
           item_holdings.insert(item_holdings.index(ih), holding)
           next
