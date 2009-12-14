@@ -38,8 +38,8 @@ class Holding < AltoModel
       u = self.work_meta.MODIFIED_DATE
     else
      u = Time.now
-   end
-   u.xmlschema
+    end
+    u.xmlschema
   end
   
   def relationships
