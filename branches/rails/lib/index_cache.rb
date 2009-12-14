@@ -149,6 +149,7 @@ class ItemHoldingCache < IndexCache
     items = nil
     holdings = nil
     unless ids[:items].empty?
+      puts "Items:  #{ids[:items].inspect}"
       items = Item.find_eager(ids[:items])
       if items.length < ids[:items].length
         prune(results["response"]["docs"], items)      
@@ -156,23 +157,27 @@ class ItemHoldingCache < IndexCache
       end
     end
     unless ids[:holdings].empty?
+      puts "Holdings:  #{ids[:holdings].inspect}"
       holdings = Holding.find_eager(ids[:holdings])
       if holdings.length < ids[:holdings].length
         prune(results["response"]["docs"], holdings)      
         mismatch = true
       end    
     end
+    puts "We have DB results."
     if mismatch
       item_holdings = self.all(options)
-    end
-    if items && holdings
-      item_holdings = collate(items, holdings)
     else
-      item_holdings = ResultSet.new case
-      when items then items
-      when holdings then holdings
+      if items && holdings
+        item_holdings = collate(items, holdings)
+      else
+        item_holdings = ResultSet.new case
+        when items then items
+        when holdings then holdings
+        end
       end
     end
+    puts "Return from collate."
     item_holdings.total_results = results["response"]["numFound"]
     item_holdings
   end
@@ -308,7 +313,6 @@ class ItemHoldingCache < IndexCache
     items = nil
     holdings = nil
     unless ids[:items].empty?
-      puts "Items:  #{ids[:items].inspect}"
       items = Item.find_eager(ids[:items])
       if items.length < ids[:items].length
         prune(results["response"]["docs"], items)      
@@ -316,14 +320,12 @@ class ItemHoldingCache < IndexCache
       end
     end
     unless ids[:holdings].empty?
-      puts "Holdings: #{ids[:holdings].inspect}"
       holdings = Holding.find_eager(ids[:holdings])
       if holdings.length < ids[:holdings].length
         prune(results["response"]["docs"], holdings)      
         mismatch = true
       end    
     end
-    puts "We are here."
     if mismatch
       item_holdings = self.find_by_filter(filter, options)
     else
@@ -336,7 +338,6 @@ class ItemHoldingCache < IndexCache
         end
       end
     end
-    puts "Back from collate block"
     item_holdings.total_results = results["response"]["numFound"]
     item_holdings
   end  
