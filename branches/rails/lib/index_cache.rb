@@ -349,7 +349,7 @@ class ItemHoldingCache < IndexCache
       item_holdings.each do |ih|
         if item.updated > ih.updated
           item_holdings.insert(item_holdings.index(ih), item)
-          next
+          break
         end
       end
       unless item_holdings.index(item)
@@ -363,7 +363,7 @@ class ItemHoldingCache < IndexCache
         puts ih.updated
         if holding.updated > ih.updated
           item_holdings.insert(item_holdings.index(ih), holding)
-          next
+          break
         end
       end
       unless item_holdings.index(holding)
