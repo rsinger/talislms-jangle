@@ -360,7 +360,7 @@ class ItemHoldingCache < IndexCache
       puts holding
       item_holdings.each do |ih|
         puts holding.updated
-        puts ih.updated
+        puts item_holdings.length
         if holding.updated > ih.updated
           item_holdings.insert(item_holdings.index(ih), holding)
           break
