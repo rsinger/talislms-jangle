@@ -321,15 +321,17 @@ class ItemHoldingCache < IndexCache
         mismatch = true
       end    
     end
+
     if mismatch
       item_holdings = self.find_by_filter(filter, options)
-    end
-    if items && holdings
-      item_holdings = collate(items, holdings)
     else
-      item_holdings = ResultSet.new case
-      when items then items
-      when holdings then holdings
+      if items && holdings
+        item_holdings = collate(items, holdings)
+      else
+        item_holdings = ResultSet.new case
+        when items then items
+        when holdings then holdings
+        end
       end
     end
     item_holdings.total_results = results["response"]["numFound"]
