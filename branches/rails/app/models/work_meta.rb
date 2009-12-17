@@ -48,11 +48,19 @@ class WorkMeta < AltoModel
   end
   
   def to_marc
-    MARC::Record.new_from_marc(self.RAW_DATA).to_marc if self.RAW_DATA
+    begin
+      MARC::Record.new_from_marc(self.RAW_DATA).to_marc if self.RAW_DATA
+    rescue
+      ""
+    end
   end
   
   def to_marcxml    
-    MARC::Record.new_from_marc(self.RAW_DATA).to_xml if self.RAW_DATA
+    begin
+      MARC::Record.new_from_marc(self.RAW_DATA).to_xml if self.RAW_DATA
+    rescue
+      ""
+    end
   end
 
   def to_mods
