@@ -8,7 +8,7 @@ class WorkMeta < AltoModel
   attr_accessor :has_collections
   alias :identifier :id
   
-  def last_modified_field
+  def self.last_modified_field
     "MODIFIED_DATE"
   end
   
