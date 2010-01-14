@@ -1,6 +1,6 @@
 xml.dlf :items do | items |
-  items.df :item, "id"=>entity_uri(entity.identifier) do | item |
-    item.df :simpleavailability do | simple |
+  items.dlf :item, "id"=>entity_uri(entity.identifier) do | item |
+    item.dlf :simpleavailability do | simple |
       simple.dlf :identifier, entity_uri(entity.identifier)
       if entity.available?
         simple.dlf :availabilitystatus, 'available'

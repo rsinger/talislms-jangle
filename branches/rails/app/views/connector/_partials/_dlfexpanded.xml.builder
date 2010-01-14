@@ -1,4 +1,4 @@
-xml.dlf :record, 'dlf:xmlns'=>'http://diglib.org/ilsdi/1.1' do | record |
+xml.dlf :record, 'xmlns:dlf'=>'http://diglib.org/ilsdi/1.1' do | record |
   record.dlf :bibliographic, "id"=>entity_uri(entity.WORK_ID,'resources')
   xml << case entity.class.to_s
   when "Item" then render(:partial=>"/connector/_partials/dlfexpanded_items.xml.builder", :locals=>{:entity=>entity})
