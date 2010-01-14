@@ -10,7 +10,7 @@ class Borrower < AltoModel
   has_many :contacts, :foreign_key=>"TARGET_ID"
   #acts_as_solr :fields=> [{:BORROWER_ID=>:integer}, {:BARCODE=>:string},
   #  {:SURNAME=>:string}, {:FIRST_NAMES=>:string},{:EDIT_DATE=>:date}]
-  attr_accessor :has_items, :current_address
+  attr_accessor :has_items, :current_address, :via
   alias :identifier :id
   
   def self.last_modified_field
@@ -144,6 +144,9 @@ class Borrower < AltoModel
         ill.item.add_category('interloan')
         related_entities << ill.item
       end     
+    end
+    related_entities.each do | rel |
+      rel.via = self
     end
     related_entities
   end

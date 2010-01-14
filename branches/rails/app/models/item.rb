@@ -10,7 +10,7 @@ class Item < AltoModel
   belongs_to :location, :foreign_key=>"ACTIVE_SITE_ID"
   has_many :ill_requests, :foreign_key=>"ITEM_ID"
   
-  attr_accessor :status, :loan_type, :harvest_item
+  attr_accessor :status, :loan_type, :via
   
   def self.last_modified_field
     "EDIT_DATE"
@@ -215,6 +215,9 @@ class Item < AltoModel
         related_entities << ill.borrower
       end      
     end
+    related_entities.each do | rel |
+      rel.via = self
+    end    
     related_entities
   end
 

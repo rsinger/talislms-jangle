@@ -4,7 +4,7 @@ class Holding < AltoModel
   belongs_to :work_meta, :foreign_key=>"WORK_ID"
   belongs_to :classification, :foreign_key=>"CLASS_ID"
   belongs_to :location, :foreign_key=>"LOCATION_ID"
-  attr_accessor :harvest_item
+  attr_accessor :via
   def title 
     (1..4).each do | holdings_note |
       note = self.send("HOLDINGS#{holdings_note}")
@@ -151,6 +151,9 @@ class Holding < AltoModel
     if rel == 'resources'
       related_entities << self.work_meta
     end
+    related_entities.each do | rel |
+      rel.via = self
+    end    
     related_entities
   end  
 end

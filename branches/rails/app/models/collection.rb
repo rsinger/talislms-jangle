@@ -3,7 +3,7 @@ class Collection < AltoModel
   set_primary_key 'COLLECTION_ID'
   has_many :titles, :foreign_key=>'COLLECTION_ID'
   has_many :work_metas, :through=>:titles
-  attr_accessor :has_works
+  attr_accessor :has_works, :via
   alias :identifier :id
   def dc
     xml = Builder::XmlMarkup.new
@@ -66,6 +66,9 @@ class Collection < AltoModel
     if rel == 'resources'
       related_entities = self.work_metas.find(:all, :limit=>limit, :offset=>offset)
     end
+    related_entities.each do | rel |
+      rel.via = self
+    end    
     related_entities
   end  
 end

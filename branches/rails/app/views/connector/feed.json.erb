@@ -47,6 +47,10 @@
         ent["categories"] = entity.categories
         categories = (categories + entity.categories).uniq
       end
+      if entity.via
+        ent["links"] ||={}
+        ent["links"]["via"] = [{"type"=>"application/atom+xml", "href"=>entity_uri(entity.via.identifier, params[:scope])}]
+      end
       data << ent
     end %>
     <%= data.to_json -%>,

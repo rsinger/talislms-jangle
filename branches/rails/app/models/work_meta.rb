@@ -5,7 +5,7 @@ class WorkMeta < AltoModel
   has_many :titles, :foreign_key=>"WORK_ID"
   has_many :collections, :through=>:titles
   has_many :holdings, :foreign_key=>"WORK_ID"
-  attr_accessor :has_collections
+  attr_accessor :has_collections, :via
   alias :identifier :id
   
   def self.last_modified_field
@@ -155,6 +155,9 @@ class WorkMeta < AltoModel
     elsif rel == 'collections'
       related_entities = self.collections
     end
+    related_entities.each do | rel |
+      rel.via = self
+    end    
     related_entities
   end
   
