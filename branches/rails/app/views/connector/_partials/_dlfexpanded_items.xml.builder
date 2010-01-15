@@ -13,7 +13,7 @@ xml.dlf :items do | items |
       #end
       if entity.CLASS_ID
         loc_string << " - " unless loc_string.empty?
-        loc_string << "Shelfmark: #{entity.classification.CLASS_NUMBER} #{entity.SUFFIX}"
+        loc_string << "Shelfmark: #{entity.classification.CLASS_NUMBER} #{entity.SUFFIX}" if entity.classification
       end
       simple.dlf :location, loc_string
       if entity.availability_message
