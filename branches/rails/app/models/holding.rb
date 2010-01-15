@@ -75,10 +75,15 @@ class Holding < AltoModel
     if self.work_meta && self.work_meta.MODIFIED_DATE
       record << MARC::ControlField.new('005',self.work_meta.MODIFIED_DATE.strftime("%Y%m%d%H%M%S.0"))
     end
-    scheme = case self.classification.CLASS_AREA_ID.strip
-    when 'DDC' then "1"
-    when 'LC' then "0"
-    end
+    if self.classification
+      scheme = case self.classification.CLASS_AREA_ID.strip
+      when 'DDC' then "1"
+      when 'LC' then "0"
+      end
+    else
+      scheme = nil
+    end    
+
     location = MARC::DataField.new('852', scheme)
     unless self.LOCATION_ID.nil? or self.LOCATION_ID.empty?
       location.append(MARC::Subfield.new('a', self.location.NAME))
