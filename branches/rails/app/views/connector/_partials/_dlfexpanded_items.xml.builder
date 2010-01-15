@@ -8,11 +8,11 @@ xml.dlf :items do | items |
         simple.dlf :availabilitystatus, 'not available'
       end
       loc_string = ''
-      #if location
-      #  loc_string = 'Location: '+location["name"]
-      #end
+      if entity.location and entity.location.NAME
+        loc_string = 'Location: '+entity.location.NAME
+      end
       if entity.CLASS_ID
-        loc_string << " - " unless loc_string.empty?
+        loc_string << "; " unless loc_string.empty?
         loc_string << "Shelfmark: #{entity.classification.CLASS_NUMBER} #{entity.SUFFIX}" if entity.classification
       end
       simple.dlf :location, loc_string
