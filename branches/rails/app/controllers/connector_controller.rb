@@ -145,7 +145,7 @@ class ConnectorController < ApplicationController
     end
 
 
-    populate_entities
+    populate_entities if @entities.length > 0
     params[:format] = nil if params[:format]
     respond_to do | fmt |
       fmt.json {render :action=>'feed'}
