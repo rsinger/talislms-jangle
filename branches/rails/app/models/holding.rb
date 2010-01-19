@@ -137,7 +137,7 @@ class Holding < AltoModel
   
   def self.sync_from(timestamp)
     while rows = Holding.find_by_sql(["SELECT TOP 1000 h.*, w.MODIFIED_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS_META w WHERE h.WORK_ID = w.WORK_ID AND w.MODIFIED_DATE >= ? ORDER BY w.MODIFIED_DATE", timestamp])
-      break if rows.empty?
+      break if rows.empty? or (rows.length == 1 && rows.first.modified == timestamp)
       puts "Updating #{self.to_s} from timestamp: #{timestamp}"
       docs = []
       rows.each {|row| docs << row.to_doc }
