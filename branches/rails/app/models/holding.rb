@@ -146,7 +146,7 @@ class Holding < AltoModel
       AppConfig.solr.commit
       results = AppConfig.solr.select :q=>"model:#{docs.last[:model]}"
       puts "#{results["response"]["numFound"]} #{docs.last[:model]} documents in Solr index"
-      break if rows.empty? or rows.length == 1
+      break if rows.empty? or rows.length == 1 or rows.length < 1000
     end    
     AppConfig.solr.commit    
   end  
