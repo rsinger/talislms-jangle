@@ -19,7 +19,7 @@ xml.dlf :items do | items |
       if entity.availability_message
         simple.dlf :availabilitymsg, entity.availability_message 
       end
-      #simple.dateavailable(date_available.xmlschema) if date_available 
+      simple.dlf :dateavailable, entity.date_available if entity.date_available 
     end
     item << entity.to_marcxml.to_s
   end

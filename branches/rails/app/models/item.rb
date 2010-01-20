@@ -67,18 +67,32 @@ class Item < AltoModel
   end
   
   def availability_message
+    message = ""
     if available?
       unless self.status
         self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(6,self.STATUS_ID)
       end
+      if !self.status.OPAC_MESSAGE.nil? and self.status.OPAC_MESSAGE != ""
+        message = self.status.OPAC_MESSAGE
+      else
+        message = self.status.NAME
+      end      
     elsif curr_loan = self.loans.find(:first, :conditions=>"CURRENT_LOAN = 'T'")
-      self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(24,curr_loan.LOAN_TYPE)
+      #
+      loan_type = LoanRule.find(:first, :conditions=>{:LOCATION_PROFILE_ID=>self.location.LOCATION_PROFILE_ID,
+        :BORROWER_TYPE=>curr_loan.borrower.TYPE_ID, :ITEM_TYPE=>self.TYPE_ID, :LOAN_TYPE=>curr_loan.LOAN_TYPE})
+      if loan_type
+        message = loan_type.due_date.NAME
+      else
+        self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(24,curr_loan.LOAN_TYPE)
+        if !self.status.OPAC_MESSAGE.nil? and self.status.OPAC_MESSAGE != ""
+          message = self.status.OPAC_MESSAGE
+        else
+          message = self.status.NAME
+        end
+      end
     end
-    if !self.status.OPAC_MESSAGE.nil? and self.status.OPAC_MESSAGE != ""
-      self.status.OPAC_MESSAGE
-    else
-      self.status.NAME
-    end
+    message
   end
   
   def entry(format)
