@@ -67,8 +67,12 @@ class Item < AltoModel
   end
   
   def availability_message
-    unless self.status
-      self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(6,self.STATUS_ID)
+    if available?
+      unless self.status
+        self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(6,self.STATUS_ID)
+      end
+    elsif curr_loan = self.loans.find(:first, :conditions=>"CURRENT_LOAN = 'T'")
+      self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(24,curr_loan.LOAN_TYPE)
     end
     self.status.NAME
   end
