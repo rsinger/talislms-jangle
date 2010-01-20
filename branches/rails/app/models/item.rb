@@ -141,7 +141,7 @@ class Item < AltoModel
   
   def available?
     self.loans.each do | loan |
-      if loan.CURRENT_LOAN == 'Y'
+      if loan.CURRENT_LOAN == 'T'
         return false
       end
     end
@@ -157,6 +157,10 @@ class Item < AltoModel
   def date_available
     if available?
       return DateTime.now.xmlschema
+    else
+      if curr_loan = self.loans.find(:first, :conditions=>"CURRENT_LOAN = 'T'")
+        return curr_loan.DUE_DATE.xmlschema
+      end
     end
   end
   

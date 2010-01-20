@@ -75,7 +75,7 @@ class ConnectorController < ApplicationController
     @offset = 0
     @entities = []
     entities.each do | entity |
-      @entities = @entities + entity.get_relationships(params[:entity], @offset, AppConfig.connector['page_size'])
+      @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
     end
     @entities.uniq!
     @total = @entities.length
@@ -85,7 +85,7 @@ class ConnectorController < ApplicationController
       fmt.json {render :action=>'feed'}
     end    
     
-  end
+  end  
   
   def explain
     @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')

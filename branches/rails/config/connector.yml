@@ -82,7 +82,7 @@ categories:
     item:
         scheme: "http://jangle.org/vocab/terms#copy"
     holding:
-        scheme: "http://jangle.org/vocab/terms#copy"        
+        scheme: "http://jangle.org/vocab/terms#holding"        
     reservation:
         scheme: "http://jangle.org/vocab/terms#hold"  
 
