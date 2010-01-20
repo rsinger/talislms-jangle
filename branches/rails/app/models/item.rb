@@ -74,7 +74,11 @@ class Item < AltoModel
     elsif curr_loan = self.loans.find(:first, :conditions=>"CURRENT_LOAN = 'T'")
       self.status = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(24,curr_loan.LOAN_TYPE)
     end
-    self.status.NAME
+    if !self.status.OPAC_MESSAGE.nil? and self.status.OPAC_MESSAGE != ""
+      self.status.OPAC_MESSAGE
+    else
+      self.status.NAME
+    end
   end
   
   def entry(format)
