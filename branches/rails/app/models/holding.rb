@@ -151,7 +151,7 @@ class Holding < AltoModel
     AppConfig.solr.commit    
   end  
   
-  def get_relationships(rel, offset, limit) 
+  def get_relationships(rel, filter, offset, limit) 
     related_entities = []
     if rel == 'resources'
       related_entities << self.work_meta

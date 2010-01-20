@@ -143,11 +143,15 @@ class WorkMeta < AltoModel
     end    
     works
   end  
-  def get_relationships(rel, offset, limit) 
+  def get_relationships(rel, filter, offset, limit) 
     related_entities = []
     if rel == 'items'
       if self.items
-        related_entities = related_entities + self.items
+        if filter
+          related_entities = related_entities + self.items.find_by_filter(filter, limit)
+        else
+          related_entities = related_entities + self.items
+        end
       end
       if self.holdings
         related_entities = related_entities + self.holdings

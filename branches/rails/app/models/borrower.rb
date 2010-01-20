@@ -128,9 +128,10 @@ class Borrower < AltoModel
     self.find(:all, :conditions=>{:BORROWER_ID => ids}, :include=>[:contacts, :contact_points])
   end
   
-  def get_relationships(rel, offset, limit)
+  def get_relationships(rel, filter, offset, limit)
     related_entities = []
     if rel == 'items'
+
       self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
         loan.item.add_category('loan')
         related_entities << loan.item
