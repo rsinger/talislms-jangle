@@ -148,7 +148,9 @@ class WorkMeta < AltoModel
     if rel == 'items'
       if self.items
         if filter
-          related_entities = related_entities + self.items.find_by_filter(filter, limit)
+          self.items.each do | item |
+            related_entities << item if item.categories.index(filter)
+          end
         else
           related_entities = related_entities + self.items
         end
