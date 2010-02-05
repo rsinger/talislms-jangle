@@ -250,10 +250,16 @@ class Item < AltoModel
   def charges(borrower_id)
     charges = {}
     self.loans.find_all_by_BORROWER_ID(borrower_id).each do | loan |
-      if loan.CURRENT == "F"
+      if loan.CURRENT_LOAN == "F"
         loan_charges = loan.fines
         if loan_charges > 0.00
           charges[:loans] = loan_charges
+        end
+      else
+        due_date = loan.DUE_DATE.strftime("%m/%d/%Y %H:%M:%S")
+        loan_charges = self.connection.execute("exec CL_CALC_FINE_SP #{loan.LOAN_TYPE}, '#{due_date}', '#{loan.CREATE_LOCATION}', #{loan.borrower.TYPE_ID}, #{loan.item.TYPE_ID}")
+        if loan_charges > 0.00
+          charges[:loans] = loan_charges.to_f
         end
       end
     end
