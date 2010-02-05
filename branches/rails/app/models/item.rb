@@ -246,6 +246,19 @@ class Item < AltoModel
     end    
     related_entities
   end
+  
+  def charges(borrower_id)
+    charges = {}
+    self.loans.find_all_by_BORROWER_ID(borrower_id).each do | loan |
+      if loan.CURRENT == "F"
+        loan_charges = loan.fines
+        if loan_charges > 0.00
+          charges[:loans] = loan_charges
+        end
+      end
+    end
+    charges
+  end
 
   def set_uri(base, path)
     @uri = "#{base}/#{path}/#{identifier}"

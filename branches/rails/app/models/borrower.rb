@@ -131,20 +131,24 @@ class Borrower < AltoModel
   def get_relationships(rel, filter, offset, limit)
     related_entities = []
     if rel == 'items'
-
-      self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
-        loan.item.add_category('loan')
-        related_entities << loan.item
+      if filter.nil? || filter == "loan"
+        self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
+          loan.item.add_category('loan')
+          related_entities << loan.item
+        end
       end
-      self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
-        rsv.item.add_category('reservation')
-        related_entities << rsv.item
+      if filter.nil? || filter == "hold"
+        self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+          rsv.item.add_category('reservation')
+          related_entities << rsv.item
+        end
       end
-    
-      self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
-        ill.item.add_category('interloan')
-        related_entities << ill.item
-      end     
+      if filter.nil? || filter == "interloan"
+        self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
+          ill.item.add_category('interloan')
+          related_entities << ill.item
+        end     
+      end
     end
     related_entities.each do | rel |
       rel.via = self

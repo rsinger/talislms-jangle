@@ -79,7 +79,7 @@ class ConnectorController < ApplicationController
     end
     @entities.uniq!
     @total = @entities.length
-    populate_entities
+    populate_entities unless @entities.empty?
     params[:format] = nil if params[:format]
     respond_to do | fmt |
       fmt.json {render :action=>'feed'}

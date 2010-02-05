@@ -1,5 +1,15 @@
 xml.dlf :items do | items |
   items.dlf :item, "id"=>entity_uri(entity.identifier) do | item |
+    if action_name == "relationship" and params[:scope] == "actors"
+      charges = entity.charges(params[:id].to_i)
+      unless charges.empty?
+        item.jangle :fines, 'xmlns:jangle'=>'http://jangle.org/vocab/' do | fines |
+          if charges[:loans]
+            fines.jangle :loans, charges[:loans]
+          end
+        end
+      end
+    end
     item.dlf :simpleavailability do | simple |
       simple.dlf :identifier, entity_uri(entity.identifier)
       if entity.available?
