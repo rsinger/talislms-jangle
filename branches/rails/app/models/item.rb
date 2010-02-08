@@ -257,9 +257,9 @@ class Item < AltoModel
         end
       else
         due_date = loan.DUE_DATE.strftime("%m/%d/%Y %H:%M:%S")
-        loan_charges = self.connection.execute("exec CL_CALC_FINE_SP #{loan.LOAN_TYPE}, '#{due_date}', '#{loan.CREATE_LOCATION}', #{loan.borrower.TYPE_ID}, #{loan.item.TYPE_ID}")
-        if loan_charges > 0.00
-          charges[:loans] = loan_charges.to_f
+        calc_fine_sp = self.connection.exec_stored_procedure("exec CL_CALC_FINE_SP #{loan.LOAN_TYPE}, '#{due_date}', '#{loan.CREATE_LOCATION}', #{loan.borrower.TYPE_ID}, #{loan.item.TYPE_ID}")
+        if calc_fine_sp.first.values.first.to_f > 0.00
+          charges[:loans] = calc_fine_sp.first.values.first.to_f
         end
       end
     end

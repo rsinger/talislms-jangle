@@ -19,8 +19,19 @@ module ActiveRecord
         raise "unable to choose type for #{ar_type} from:\n#{types.collect{|t| t['type_name']}.inspect}"
       end
     end
+    
+    class JdbcAdapter
+      def exec_stored_procedure(sql, name = nil)
+        log(sql, name) do
+          @connection.execute_query(sql)
+        end
+      end
+    end      
   end
 end
+
+
+
 
 #module TSqlMethods
 #  def add_limit_offset!(sql, options)
