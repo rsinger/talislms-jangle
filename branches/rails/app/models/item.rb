@@ -227,19 +227,24 @@ class Item < AltoModel
     if rel == 'resources'
       related_entities << self.work_meta
     elsif rel == 'actors'
-      self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
-        loan.borrower.add_category('loan')
-        related_entities << loan.borrower
+      if filter.nil? or filter == 'loan'
+        self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
+          loan.borrower.add_category('loan')
+          related_entities << loan.borrower
+        end
       end
-      self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
-        rsv.borrower.add_category('reservation')
-        related_entities << rsv.borrower
+      if filter.nil? or filter == 'hold'
+        self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+          rsv.borrower.add_category('hold')
+          related_entities << rsv.borrower
+        end
       end
-    
-      self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
-        ill.borrower.add_category('interloan')
-        related_entities << ill.borrower
-      end      
+      if filter.nil? or filter == 'interloan'
+        self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
+          ill.borrower.add_category('interloan')
+          related_entities << ill.borrower
+        end      
+      end
     end
     related_entities.each do | rel |
       rel.via = self
