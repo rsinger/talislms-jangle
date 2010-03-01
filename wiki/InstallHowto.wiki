@@ -1,5 +1,5 @@
 #summary HOWTO Install the TalisLMS Connector.
-#labels Featured
+#labels Deprecated
 
 = Introduction =
 
