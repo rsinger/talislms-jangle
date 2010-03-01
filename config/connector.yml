@@ -1,0 +1,175 @@
+## YAML Template.
+page_size: 100
+service_name: alto
+display_name: Alto LMS
+
+solr_opts:
+    :home_dir: "./lib/apache-solr-1.4.0"
+
+record_types:
+    talis_soa_borrower:
+        uri: http://jangle.org/vocab/formats#talis_soa_borrower
+        content-type: application/xml
+    talis_soa_availability:
+        uri: http://jangle.org/vocab/formats#talis_soa_availability
+        content-type: application/xml        
+    dlfexpanded:
+        uri: "http://jangle.org/vocab/formats#http://diglib.org/ilsdi/1.1"
+        content-type: application/xml
+    daia:
+        uri: "http://jangle.org/vocab/formats#http://ws.gbv.de/daia/"
+        content-type: application/xml
+    vcard:
+        uri: "http://jangle.org/vocab/formats#text/x-vcard"
+        content-type: text/x-card
+    marcxml:
+        uri: "http://jangle.org/vocab/formats#http://www.loc.gov/MARC21/slim"
+        content-type: application/xml
+    marc:
+        uri: "http://jangle.org/vocab/formats#application/marc"
+        content-type: application/marc
+    mods:
+        uri: "http://jangle.org/vocab/formats#http://www.loc.gov/mods/v3"
+        content-type: application/xml                
+        stylesheets:
+            feed: 
+                uri: http://jangle.googlecode.com/svn/trunk/xsl/AtomMARC21slim2MODS3-2.xsl
+                entities:
+                    - resources
+            item: 
+                uri: http://www.loc.gov/standards/mods/v3/MARC21slim2MODS3-2.xsl
+                entities:
+                    - resources
+    dc:
+        uri: "http://jangle.org/vocab/formats#http://purl.org/dc/elements/1.1/"
+        content-type: application/rdf+xml
+        stylesheets:
+            item: 
+                uri: http://www.loc.gov/standards/marcxml/xslt/MARC21slim2RDFDC.xsl
+                entities:
+                    - resources
+            feed: 
+                uri: http://jangle.googlecode.com/svn/trunk/xsl/AtomMARC21slim2RDFDC.xsl
+                entities:
+                    - resources
+    oai_dc:
+        uri: "http://jangle.org/vocab/formats#http://www.openarchives.org/OAI/2.0/oai_dc/"
+        content-type: application/xml    
+        stylesheets:
+            item: 
+                uri: http://www.loc.gov/standards/marcxml/xslt/MARC21slim2OAIDC.xsl
+                entities:
+                    - resources
+            feed: 
+                uri: http://jangle.googlecode.com/svn/trunk/xsl/AtomMARC21slim2OAIDC.xsl
+                entities:
+                    - resources    
+    atom:
+        uri: "http://jangle.org/vocab/formats#http://www.w3.org/2005/Atom"
+        content-type: application/atom+xml
+
+context-sets:
+    dc:
+        identifier: info:srw/cql-context-set/1/dc-v1.1
+    rec:
+        identifier: info:srw/cql-context-set/2/rec-1.1
+    cql:
+        identifier: info:srw/cql-context-set/1/cql-v1.2
+
+categories:
+    opac:
+        scheme: "http://jangle.org/vocab/terms#dlf-ilsdi-resource"      
+    item:
+        scheme: "http://jangle.org/vocab/terms#copy"
+    holding:
+        scheme: "http://jangle.org/vocab/terms#holding"        
+    reservation:
+        scheme: "http://jangle.org/vocab/terms#hold"  
+
+
+entities:    
+    actors:
+        title: Borrowers
+        record_types:            
+            vcard: vcard.erb
+            #talis_soa_borrower: talis_borrower.xml.builder
+        default: vcard
+        search:
+            longname: Search Borrower records in Alto
+            description: Borrower records search.
+            syndicationright: closed
+            query: rec.identifier > 0        
+            indexes:
+                - rec.identifier
+                - rec.lastModificationDate
+        options:
+            - get
+        services:
+            - items
+        
+    resources:
+        title: Bibliographic records
+        record_types:
+            marcxml: marc.erb
+            marc: marc.erb
+            mods: marc.erb
+            dc: marc.erb
+            oai_dc: marc.erb   
+        default: marcxml         
+        search:
+            longname: Search Bibliographic records in Alto
+            description: Bibliographic records search.  Defaults to keyword anywhere.
+            tags: 
+                - catalog
+                - library
+            syndicationright: open
+            query: rec.identifier > 0        
+            indexes:
+                - rec.identifier
+                - rec.lastModificationDate
+            
+        options:
+            - get
+        services:
+            - items
+            - collections
+        categories:
+            - opac
+        
+    items:
+        title: Holdings records
+        record_types:            
+            dlfexpanded: dlfexpanded.xml.builder
+            marc: marc.erb
+            marcxml: marc.erb
+            #talis_soa_availability: talis_availability.xml.builder
+            daia: daia.xml.builder
+        default: marcxml
+        search:
+            longname: Search Item records in Alto
+            description: Item records search.
+            syndicationright: open
+            query: rec.identifier > 0        
+            indexes:
+                - rec.identifier
+                - rec.lastModificationDate
+        options:
+            - get
+        services:
+            - resources
+            - actors
+        categories:
+            - holding
+            - item
+            
+    collections:
+        title: Categories
+        record_types:
+            dc: dc.xml.builder
+        default: dc
+        search: false
+        options:
+            - get
+        services:
+            - resources            
+        
