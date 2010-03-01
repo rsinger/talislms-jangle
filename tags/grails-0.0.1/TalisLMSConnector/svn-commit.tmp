@@ -1,0 +1,26 @@
+Added the Searchable plugin to improve paging performance.  Also updated project to Grails 1.1.1
+--This line, and those below, will be ignored--
+
+_M   .
+AM   plugins
+A    jangle-test.launch
+A    ivysettings.xml
+M    web-app/WEB-INF/sitemesh.xml
+M    web-app/WEB-INF/tld/grails.tld
+M    web-app/WEB-INF/applicationContext.xml
+M    application.properties
+M    grails-app/services/FeedService.groovy
+M    grails-app/services/CoreService.groovy
+M    grails-app/conf/UrlMappings.groovy
+M    grails-app/conf/Config.groovy
+A    grails-app/conf/core-config.yml
+A    grails-app/conf/Searchable.groovy
+M    grails-app/controllers/ResourcesController.groovy
+M    grails-app/domain/WorkMetadata.groovy
+A    grails-app/views/resources/status.gsp
+A    stacktrace.log
+A    ivy.xml
+AM   lib/xercesImpl.jar
+AM   lib/xalan.jar
+A    jangle.launch
+A    jangle.tmproj
