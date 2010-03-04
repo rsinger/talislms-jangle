@@ -103,13 +103,13 @@ class AltoModel < ActiveRecord::Base
   
   def self.sync_from(timestamp)
     conditions = ["#{last_modified_field} >= ?", timestamp]
-    while rows = self.all(:conditions=>conditions, :limit=>1000, :order=>last_modified_field)
+    while rows = self.all(:conditions=>conditions, :limit=>1000, :order=>"#{last_modified_field}, #{primary_key}")
       break if rows.empty? or (rows.length == 1 && rows.first.updated == timestamp.xmlschema)
       puts "Updating #{self.to_s} from timestamp: #{conditions[1]}"
       docs = []
       rows.each {|row| docs << row.to_doc }
       docs.each {|doc| AppConfig.solr.add(doc)}
-      conditions = ["#{last_modified_field} >= ?", rows.last.send(last_modified_field)] unless rows.empty?
+      conditions = ["#{last_modified_field} >= ? AND #{primary_key} > ?", [rows.last.send(last_modified_field), rows.last.id]] unless rows.empty?
       AppConfig.solr.commit
       results = AppConfig.solr.select :q=>"model:#{docs.last[:model]}"
       puts "#{results["response"]["numFound"]} #{docs.last[:model]} documents in Solr index"
