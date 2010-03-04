@@ -4,6 +4,7 @@ class Holding < AltoModel
   belongs_to :work_meta, :foreign_key=>"WORK_ID"
   belongs_to :classification, :foreign_key=>"CLASS_ID"
   belongs_to :location, :foreign_key=>"LOCATION_ID"
+  belongs_to :work, :foreign_key=>"WORK_ID"
   attr_accessor :via
   def title 
     (1..4).each do | holdings_note |
@@ -14,8 +15,8 @@ class Holding < AltoModel
   end
   
   def to_doc
-    if self.work_meta && self.work_meta.MODIFIED_DATE
-      edit_date = self.work_meta.MODIFIED_DATE
+    if self.work && self.work.EDIT_DATE
+      edit_date = self.work.EDIT_DATE
     else
       edit_date = Time.now
     end
@@ -34,8 +35,8 @@ class Holding < AltoModel
   end
   
   def updated
-    if self.work_meta && self.work_meta.MODIFIED_DATE
-      u = self.work_meta.MODIFIED_DATE
+    if self.work && self.work.EDIT_DATE
+      u = self.work.EDIT_DATE
     else
      u = Time.now
     end
@@ -72,8 +73,8 @@ class Holding < AltoModel
     record.leader[18] = 'i'
     record << MARC::ControlField.new('001',self.identifier)
     record << MARC::ControlField.new('004',self.WORK_ID.to_s)
-    if self.work_meta && self.work_meta.MODIFIED_DATE
-      record << MARC::ControlField.new('005',self.work_meta.MODIFIED_DATE.strftime("%Y%m%d%H%M%S.0"))
+    if self.work && self.work.EDIT_DATE
+      record << MARC::ControlField.new('005',self.work.EDIT_DATE.strftime("%Y%m%d%H%M%S.0"))
     end
     if self.classification
       scheme = case self.classification.CLASS_AREA_ID.strip
@@ -128,7 +129,7 @@ class Holding < AltoModel
  
   end
   def self.find_eager(ids)
-    return self.find(:all, :conditions=>{:HOLDINGS_ID=>ids}, :include=>[:work_meta, :classification, :location])
+    return self.find(:all, :conditions=>{:HOLDINGS_ID=>ids}, :include=>[:work, :work_meta, :classification, :location])
   end  
   
   def set_uri(base, path)
@@ -136,13 +137,13 @@ class Holding < AltoModel
   end  
   
   def self.sync_from(timestamp)
-    while rows = Holding.find_by_sql(["SELECT TOP 1000 h.*, w.MODIFIED_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS_META w WHERE h.WORK_ID = w.WORK_ID AND w.MODIFIED_DATE >= ? ORDER BY w.MODIFIED_DATE", timestamp])
+    while rows = Holding.find_by_sql(["SELECT TOP 1000 h.*, w.EDIT_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS w WHERE h.WORK_ID = w.WORK_ID AND w.EDIT_DATE >= ? ORDER BY w.EDIT_DATE", timestamp])
       break if rows.empty? or (rows.length == 1 && rows.first.modified == timestamp)
       puts "Updating #{self.to_s} from timestamp: #{timestamp}"
       docs = []
       rows.each {|row| docs << row.to_doc }
       docs.each {|doc| AppConfig.solr.add(doc)}
-      timestamp = rows.last.work_meta.MODIFIED_DATE unless rows.empty?
+      timestamp = rows.last.work.EDIT_DATE unless rows.empty?
       AppConfig.solr.commit
       results = AppConfig.solr.select :q=>"model:#{docs.last[:model]}"
       puts "#{results["response"]["numFound"]} #{docs.last[:model]} documents in Solr index"
