@@ -10,13 +10,17 @@ class ConnectorController < ApplicationController
     when 'items' then ItemHoldingCache
     when 'resources' then WorkMetaCache
     end
-
-    @entities = entity_class.all(:limit=>AppConfig.connector['page_size'], :offset=>@offset)
-
-    if params[:entity] != 'collections'
-      @total = @entities.total_results      
+    if params[:entity] == 'actors' && (@auth_user && @auth_user.user != :jangle_administrator)
+      @entities = [@auth_user.borrower]
+      @total = 1
     else
-      @total = Collection.count
+      @entities = entity_class.all(:limit=>AppConfig.connector['page_size'], :offset=>@offset)
+
+      if params[:entity] != 'collections'
+        @total = @entities.total_results      
+      else
+        @total = Collection.count
+      end
     end
     populate_entities
     params[:format] = nil if params[:format]
@@ -49,7 +53,13 @@ class ConnectorController < ApplicationController
   # Returns entities specifically request by id, whether single ids, comma delimited lists or ranges
   def show
     @entities = case params[:entity]
-    when 'actors' then Borrower.find(id_translate(params[:id]))
+    when 'actors'
+      if @auth_user && (@auth_user.user == :jangle_administrator || @auth_user.borrower_id == params[:id].to_i)
+        Borrower.find(id_translate(params[:id]))
+      else
+        render :text => "Not Authorized", :status=>401
+        return
+      end
     when 'collections' then Collection.find(id_translate(params[:id]))
     when 'items' then ItemHoldingCache.find(id_translate(params[:id]))
     when 'resources' then WorkMeta.find(id_translate(params[:id]))
@@ -66,7 +76,13 @@ class ConnectorController < ApplicationController
   # Returns the entity relationship feed
   def relationship
     entities = case params[:scope]
-    when 'actors' then Borrower.find(id_translate(params[:id]))
+    when 'actors'
+      if @auth_user && (@auth_user.user == :jangle_administrator || @auth_user.borrower_id == params[:id].to_i)
+        Borrower.find(id_translate(params[:id]))
+      else
+        render :text => "Not Authorized", :status=>401
+        return
+      end      
     when 'collections' then Collection.find(id_translate(params[:id]))
     when 'items' then ItemHoldingCache.find(id_translate(params[:id]))
     when 'resources' then WorkMeta.find(id_translate(params[:id]))
@@ -75,7 +91,11 @@ class ConnectorController < ApplicationController
     @offset = 0
     @entities = []
     entities.each do | entity |
-      @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
+      if params[:entity] == 'actors' && @auth_user.user != :jangle_administrator
+        @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'], @auth_user.borrower_id)
+      else
+        @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
+      end
     end
     @entities.uniq!
     @total = @entities.length
@@ -155,6 +175,9 @@ class ConnectorController < ApplicationController
 
   private
   def init_feed
+    if (params[:entity] && params[:entity] == 'actors') || (params[:scope] && params[:scope] == 'actors')
+      @auth_user = authenticate
+    end
     @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
     @format = determine_format(params)
     sync_models
@@ -163,7 +186,6 @@ class ConnectorController < ApplicationController
     @entities.first.class.find_associations(@entities)
   end
   def determine_format(params)
-    puts params.inspect
     # this needs to be fixed so it's appropriate for the entity
     if params[:format]
       return params[:format]
@@ -205,4 +227,22 @@ class ConnectorController < ApplicationController
     end
     return ids
   end  
+  
+  private
+    def authenticate
+      user = nil
+      authenticate_or_request_with_http_basic do |id, password| 
+        if id == AppConfig.connector['administrator']['username'] && password == AppConfig.connector['administrator']['password']
+          user = AuthenticatedUser.new(:user=>:jangle_administrator)
+        elsif borrower = Borrower.find_by_BARCODE_and_PIN(id, password)
+          user = AuthenticatedUser.new(:user=>id, :password=>password, :borrower=>borrower, :borrower_id=>borrower.BORROWER_ID)
+        end
+      end
+      user
+    end
+    
+    class AuthenticatedUser < OpenStruct
+    end
+
+  
 end

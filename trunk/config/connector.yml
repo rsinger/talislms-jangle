@@ -3,6 +3,10 @@ page_size: 100
 service_name: alto
 display_name: Alto LMS
 
+administrator:
+    username: admin
+    password: jangle
+
 solr_opts:
     :home_dir: "./lib/apache-solr-1.4.0"
 
