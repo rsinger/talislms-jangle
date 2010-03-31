@@ -47,9 +47,10 @@ Rails::Initializer.run do |config|
   config.gem 'vpim' 
   config.gem 'composite_primary_keys'
   config.gem 'cql-ruby', :lib => 'cql_ruby'
-  config.gem 'rsolr'
+  config.gem 'rsolr', :version => "0.11.0"
   Dir['lib/apache-solr-1.4.0/dist/*.jar'].each{|jar|require jar}
   Dir['lib/apache-solr-1.4.0/lib/*.jar'].each{|jar|require jar}  
+  gem 'rsolr', "0.11.0"
   require 'rsolr'
   AppConfig.solr = RSolr.direct_connect(AppConfig.connector['solr_opts'])
 end

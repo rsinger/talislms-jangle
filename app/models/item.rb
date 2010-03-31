@@ -222,7 +222,7 @@ class Item < AltoModel
     end
   end 
   
-  def get_relationships(rel, filter, offset, limit) 
+  def get_relationships(rel, filter, offset, limit, borrower_id=nil) 
     related_entities = []
     if rel == 'resources'
       related_entities << self.work_meta
@@ -230,19 +230,19 @@ class Item < AltoModel
       if filter.nil? or filter == 'loan'
         self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
           loan.borrower.add_category('loan')
-          related_entities << loan.borrower
+          related_entities << loan.borrower unless borrower_id && borrower_id != loan.borrower.BORROWER_ID
         end
       end
       if filter.nil? or filter == 'hold'
         self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
           rsv.borrower.add_category('hold')
-          related_entities << rsv.borrower
+          related_entities << rsv.borrower unless borrower_id && borrower_id != rsv.borrower.BORROWER_ID
         end
       end
       if filter.nil? or filter == 'interloan'
         self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
           ill.borrower.add_category('interloan')
-          related_entities << ill.borrower
+          related_entities << ill.borrower unless borrower_id && borrower_id != ill.borrower.BORROWER_ID
         end      
       end
     end
