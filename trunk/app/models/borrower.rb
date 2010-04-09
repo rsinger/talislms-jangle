@@ -158,6 +158,8 @@ class Borrower < AltoModel
   def self.cql_index_to_sql_column(index)  
     column = case index
       when "rec.identifier" then "BORROWER_ID"
+      when "jangle.username" then "BARCODE"
+      when "jangle.password" then "PIN"
       when "rec.lastModificationDate" then "EDIT_DATE"
       when "rec.creationDate" then "CREATE_DATE"
       end

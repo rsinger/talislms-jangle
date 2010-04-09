@@ -41,6 +41,24 @@ class IndexCache
     return "(#{left} #{boolean} #{right})"
   end  
   
+  def self.valid_cql_query?(cql_node)
+    if cql_node.is_a?(CqlRuby::CqlTermNode)
+      if !cql_index_to_field(cql_node)
+        return({:number=>16, :message=>cql_node.index})
+      end
+      return true
+    end  
+    left = valid_cql_query?(cql_node.left_node)
+    if left.is_a?(Hash)
+      return left
+    end
+    right = valid_cql_query?(cql_node.right_node)
+    if right.is_a?(Hash)
+      return right
+    end
+    return true
+  end  
+  
 end
 
 class ResultSet < Array

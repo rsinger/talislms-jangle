@@ -79,6 +79,8 @@ context-sets:
         identifier: info:srw/cql-context-set/2/rec-1.1
     cql:
         identifier: info:srw/cql-context-set/1/cql-v1.2
+    jangle:
+        identifier: http://jangle.org/vocab/cql-context-set/1/jangle-v1.0
 
 categories:
     opac:
@@ -106,6 +108,8 @@ entities:
             indexes:
                 - rec.identifier
                 - rec.lastModificationDate
+                - jangle.username
+                - jangle.password
         options:
             - get
         services:
