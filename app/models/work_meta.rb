@@ -148,15 +148,19 @@ class WorkMeta < AltoModel
     if rel == 'items'
       if self.items
         if filter
+          i = 0
           self.items.each do | item |
+            i += 1
+            next if i < (offset - 1)              
             related_entities << item if item.categories.index(filter)
+            break if related_entities.length == limit
           end
         else
-          related_entities = related_entities + self.items
+          related_entities = related_entities + self.items[offset, limit]
         end
       end
       if self.holdings
-        related_entities = related_entities + self.holdings
+        related_entities = related_entities + self.holdings[offset, limit]
       end
     elsif rel == 'collections'
       related_entities = self.collections

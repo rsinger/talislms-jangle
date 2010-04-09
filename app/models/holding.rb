@@ -87,7 +87,7 @@ class Holding < AltoModel
 
     location = MARC::DataField.new('852', scheme)
     unless self.LOCATION_ID.nil? or self.LOCATION_ID.empty?
-      location.append(MARC::Subfield.new('a', self.location.NAME))
+      location.append(MARC::Subfield.new('a', self.location.NAME)) if self.location and self.location.NAME
     end
     if self.classification
       location.append(MARC::Subfield.new('h', self.classification.CLASS_NUMBER))

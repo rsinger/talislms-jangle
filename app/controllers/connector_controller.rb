@@ -124,6 +124,10 @@ class ConnectorController < ApplicationController
   end
   
   def search
+    if !params[:query] || params[:query].empty?
+      render :template => 'connector/diagnostics/7.xml.builder', :status => 400, :locals => {:message=>"'query'"}
+      return
+    end    
     parser = CqlRuby::CqlParser.new
     cql = parser.parse(params[:query])
 
@@ -154,6 +158,11 @@ class ConnectorController < ApplicationController
     else
       sort = nil
     end
+    unless (diagnostic = base_class.valid_cql_query?(cql)) === true
+      render :template => "connector/diagnostics/#{diagnostic[:number]}.xml.builder", :status => 400, :locals => {:message=>diagnostic[:message]}
+      return      
+    end
+    
     cql_query = base_class.cql_tree_walker(cql)  
     if params[:entity] == 'items'
       @entities = base_class.find_by_cql(cql_query, {:offset=>@offset, :limit=>limit, :sort=>sort})      
