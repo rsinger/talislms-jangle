@@ -139,6 +139,7 @@ class Borrower < AltoModel
       end
       if filter.nil? || filter == "hold"
         self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+          next if rsv.SATISFYING_ITEM_ID == 0
           rsv.item.add_category('hold')
           related_entities << rsv.item
         end
