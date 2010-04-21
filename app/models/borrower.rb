@@ -109,6 +109,15 @@ class Borrower < AltoModel
       relationships = {}
       relationships['http://jangle.org/vocab/Entities#Item'] = "#{self.uri}/items/"
     end
+    if self.reservations
+      self.reservations.each do |rsv|
+        rsv.links.each do |lnk|
+          if lnk.is_a?(WorkMeta)
+            relationships['http://jangle.org/vocab/Entities#Resource'] = "#{self.uri}/resources/"
+          end
+        end
+      end
+    end
     relationships
   end    
   
@@ -139,9 +148,11 @@ class Borrower < AltoModel
       end
       if filter.nil? || filter == "hold"
         self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
-          next if rsv.SATISFYING_ITEM_ID == 0
-          rsv.item.add_category('hold')
-          related_entities << rsv.item
+          rsv.links.each do | link |
+            next unless link.is_a?(Item)          
+            link.add_category('hold')
+            related_entities << link
+          end
         end
       end
       if filter.nil? || filter == "interloan"
@@ -150,6 +161,16 @@ class Borrower < AltoModel
           related_entities << ill.item
         end     
       end
+    elsif rel == 'resources'
+      if filter.nil? || filter == "hold"
+        self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+          rsv.links.each do | link |
+            next unless link.is_a?(WorkMeta)          
+            link.add_category('hold')
+            related_entities << link
+          end
+        end
+      end      
     end
     related_entities.each do | rel |
       rel.via = self
