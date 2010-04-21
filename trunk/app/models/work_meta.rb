@@ -77,8 +77,9 @@ class WorkMeta < AltoModel
   
   def categories
     unless self.SUPPRESS_FROM_OPAC == 'T' or self.SUPPRESS_FROM_INDEX == 'T'
-      return ['opac']
+      add_category('opac')
     end
+    @categories
   end
   
   def updated
