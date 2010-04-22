@@ -6,7 +6,7 @@ class ReservationLink < AltoModel
   def link
     case self.TYPE
     when 0 then Item.find(self.TARGET_ID)
-    when 1 then WorkMeta.find(self.TARGET_ID)
+    when 1 then Work.find(self.TARGET_ID)
     end
   end
 end

@@ -179,4 +179,12 @@ class WorkMeta < AltoModel
       end
     column
   end
+  def self.page(offset, limit)
+    if offset > 0
+      return WorkMetaCache.page(offset, limit)
+    end
+    result_set =  ResultSet.new(self.all(:limit=>limit, :order=>"#{self.last_modified_field} DESC", :include=>[:items, :holdings]))
+    result_set.total_results = self.count
+    result_set
+  end  
 end

@@ -106,17 +106,12 @@ class Borrower < AltoModel
   def relationships
     relationships = nil    
     if self.has_items
-      relationships = {}
+      relationships ||= {}
       relationships['http://jangle.org/vocab/Entities#Item'] = "#{self.uri}/items/"
     end
     if self.reservations
-      self.reservations.each do |rsv|
-        rsv.links.each do |lnk|
-          if lnk.is_a?(WorkMeta)
-            relationships['http://jangle.org/vocab/Entities#Resource'] = "#{self.uri}/resources/"
-          end
-        end
-      end
+      relationships ||= {}
+      relationships['http://jangle.org/vocab/Entities#Resource'] = "#{self.uri}/resources/"
     end
     relationships
   end    
@@ -134,7 +129,7 @@ class Borrower < AltoModel
   end
   
   def self.find_eager(ids)
-    self.find(:all, :conditions=>{:BORROWER_ID => ids}, :include=>[:contacts, :contact_points])
+    self.find(:all, :conditions=>{:BORROWER_ID => ids}, :include=>[:contacts, :contact_points, :reservations])
   end
   
   def get_relationships(rel, filter, offset, limit)
@@ -186,5 +181,13 @@ class Borrower < AltoModel
       when "rec.creationDate" then "CREATE_DATE"
       end
     column
+  end  
+  def self.page(offset, limit)
+    if offset > 0
+      return BorrowerCache.page(offset, limit)
+    end
+    result_set =  ResultSet.new(self.all(:limit=>limit, :order=>"#{self.last_modified_field} DESC", :include=>[:contacts, :contact_points]))
+    result_set.total_results = self.count
+    result_set
   end  
 end
