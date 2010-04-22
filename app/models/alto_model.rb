@@ -138,4 +138,10 @@ class AltoModel < ActiveRecord::Base
     end    
     AppConfig.solr.commit    
   end
+  
+  def self.page(offset, limit)
+    result_set =  ResultSet.new(self.all(:limit=>limit, :order=>"#{self.last_modified_field} DESC"))
+    result_set.total_results = self.count
+    result_set
+  end
 end

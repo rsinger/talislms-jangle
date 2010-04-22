@@ -1,20 +1,22 @@
 class ConnectorController < ApplicationController
   
   before_filter :init_feed, :except=>[:services, :explain]
+  after_filter :sync_models
+  
   def feed
     @offset = (params[:offset]||0).to_i
 
     entity_class = case params[:entity]
-    when 'actors' then BorrowerCache
+    when 'actors' then Borrower
     when 'collections' then Collection
     when 'items' then ItemHoldingCache
-    when 'resources' then WorkMetaCache
+    when 'resources' then WorkMeta
     end
     if params[:entity] == 'actors' && (@auth_user && @auth_user.user != :jangle_administrator)
       @entities = [@auth_user.borrower]
       @total = 1
     else
-      @entities = entity_class.all(:limit=>AppConfig.connector['page_size'], :offset=>@offset)
+      @entities = entity_class.page(@offset, AppConfig.connector['page_size'])
 
       if params[:entity] != 'collections'
         @total = @entities.total_results      
@@ -189,7 +191,7 @@ class ConnectorController < ApplicationController
     end
     @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
     @format = determine_format(params)
-    sync_models
+    #sync_models
   end
   def populate_entities    
     @entities.first.class.find_associations(@entities)
@@ -203,11 +205,16 @@ class ConnectorController < ApplicationController
   end
   
   def sync_models
-    case params[:entity]
-    when 'items' then ItemHoldingCache.sync
-    when 'actors' then BorrowerCache.sync
-    when 'resources' then WorkMetaCache.sync
+    [ItemHoldingCache, BorrowerCache, WorkMetaCache].each do | cache |
+      spawn(:method => :thread) do
+        cache.sync
+      end      
     end
+    #case params[:entity]
+    #when 'items' then ItemHoldingCache.sync
+    #when 'actors' then BorrowerCache.sync
+    #when 'resources' then WorkMetaCache.sync
+    #end
   end
   
   def id_translate(id)

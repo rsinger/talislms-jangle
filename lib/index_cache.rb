@@ -58,6 +58,9 @@ class IndexCache
     end
     return true
   end  
+  def self.page(offset, limit)
+    self.all(:offset=>offset, :limit=>limit)
+  end  
   
 end
 
@@ -194,6 +197,13 @@ class ItemHoldingCache < IndexCache
     end
     item_holdings.total_results = results["response"]["numFound"]
     item_holdings
+  end
+  
+  def self.page(offset, limit)
+    if offset == 0
+      self.sync unless self.synched?
+    end
+    self.all(:offset=>offset, :limit=>limit)
   end
   
   def self.find_by_cql(query, options)
@@ -402,7 +412,7 @@ class ItemHoldingCache < IndexCache
     cache_item = self.select("id:Item_#{item.ITEM_ID}",0,1)
     return false unless cache_item["response"]["numFound"] > 0
     return false unless cache_item["response"]["docs"].first["last_modified"] == item.to_doc[:last_modified]
-    holdings = Holding.find_by_sql("SELECT TOP 1 h.*, w.MODIFIED_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS_META w WHERE h.WORK_ID = w.WORK_ID ORDER BY w.MODIFIED_DATE DESC")
+    holdings = Holding.find_by_sql("SELECT TOP 1 h.*, w.EDIT_DATE FROM SITE_SERIAL_HOLDINGS h, WORKS w WHERE h.WORK_ID = w.WORK_ID ORDER BY w.EDIT_DATE DESC")
     cache_holding = self.select("id:Holding_#{holdings.first.HOLDINGS_ID}",0,1)
     return false unless cache_holding["response"]["numFound"] > 0
     return false unless cache_holding["response"]["docs"].first["last_modified"] == holdings.first.to_doc[:last_modified]   
