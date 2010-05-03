@@ -11,18 +11,18 @@ Warbler::Config.new do |config|
 
   # Additional files/directories to exclude
   # config.excludes = FileList["lib/tasks/*"]
-  config.excludes = FileList["config/database.yml", "lib/apache-solr-1.4.0/data"]
+  config.excludes = FileList["config/database.yml", "lib/apache-solr-1.4.0/data", "lib/solr/data", "log/*", "tmp/*"]
   
 
   # Additional files/directories to include, above those in config.dirs
   # config.includes = FileList["db"]
-  config.includes = FileList["Rakefile", "db/*", "script/*", "config/database.yml-war"]  
+  config.includes = FileList["Rakefile", "db/*", "script/*", "config/database.yml-war", "vendor/plugins", "lib/apache-solr-1.4.0/*"]  
   
   # Additional Java .jar files to include.  Note that if .jar files are placed
   # in lib (and not otherwise excluded) then they need not be mentioned here.
   # JRuby and JRuby-Rack are pre-loaded in this list.  Be sure to include your
   # own versions if you directly set the value
-   config.java_libs += FileList["lib/java/*.jar"]
+   config.java_libs += FileList["lib/java/*.jar", "lib/apache-solr-1.4.0/dist/", "lib/apache-solr-1.4.0/lib"]
 
   # Loose Java classes and miscellaneous files to be placed in WEB-INF/classes.
   # config.java_classes = FileList["target/classes/**.*"]
@@ -38,13 +38,14 @@ Warbler::Config.new do |config|
   # The Rails gems are included by default unless the vendor/rails directory is present.
   # config.gems += ["activerecord-jdbcmysql-adapter", "jruby-openssl"]
   # config.gems << "tzinfo"
-  config.gems["activerecord-jdbc-adapter"] = "0.9.2"
+  config.gems << "activerecord-jdbc-adapter"
+  config.gems << "rack"
   config.gems << 'jrexml'
   config.gems << 'marc'
   config.gems << 'vpim' 
   config.gems << 'composite_primary_keys'
   config.gems << 'cql-ruby'
-  config.gems['rsolr'] = "0.11.0"
+  config.gems << 'rsolr-direct'
   config.gems << 'builder'
   # Uncomment this if you don't want to package rails gem.
   # config.gems -= ["rails"]

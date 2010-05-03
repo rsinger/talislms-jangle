@@ -29,5 +29,15 @@ module ApplicationHelper
       alternate_formats[fmt['uri']] = alt_fmt_uri(uri, key)
     end
     alternate_formats
-  end  
+  end 
+  
+  def set_relationships(entity)
+    rels = {}
+    if entity.relationships
+      entity.relationships.each do | rel |
+        rels["http://jangle.org/vocab/Entities##{rel.capitalize}"] = entity_uri(entity.identifier)+"/#{rel}s/"
+      end
+    end
+    rels
+  end
 end

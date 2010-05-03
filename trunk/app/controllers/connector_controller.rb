@@ -3,21 +3,24 @@ class ConnectorController < ApplicationController
   before_filter :init_feed, :except=>[:services, :explain]
   after_filter :sync_models
   
+  # Basic feed of all resources with no ids or filters.
   def feed
     @offset = (params[:offset]||0).to_i
 
     entity_class = case params[:entity]
     when 'actors' then Borrower
     when 'collections' then Collection
-    when 'items' then ItemHoldingCache
+    when 'items' then ItemHoldingCache # Items and Holdings are collated into one index
     when 'resources' then WorkMeta
     end
+    
+    # Unless the adminstrator credentials are given, actor requests will only return the resource
+    # that has been authenticated.
     if params[:entity] == 'actors' && (@auth_user && @auth_user.user != :jangle_administrator)
       @entities = [@auth_user.borrower]
       @total = 1
     else
       @entities = entity_class.page(@offset, AppConfig.connector['page_size'])
-
       if params[:entity] != 'collections'
         @total = @entities.total_results      
       else
@@ -31,9 +34,9 @@ class ConnectorController < ApplicationController
     end
   end
   
+  # Return a feed filtered by a category
   def filter
     @offset = (params[:offset]||0).to_i
-
     entity_class = case params[:entity]
     when 'actors' then BorrowerCache
     when 'collections' then Collection
@@ -64,7 +67,7 @@ class ConnectorController < ApplicationController
       end
     when 'collections' then Collection.find(id_translate(params[:id]))
     when 'items' then ItemHoldingCache.find(id_translate(params[:id]))
-    when 'resources' then WorkMeta.find(id_translate(params[:id]))
+    when 'resources' then WorkMeta.find_eager(id_translate(params[:id]))
     end
     @offset = 0
     @total = @entities.length
@@ -99,7 +102,7 @@ class ConnectorController < ApplicationController
         @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
       end
     end
-    @entities.uniq!
+    @entities.uniq! # the same entity could be associated with multiple 'scope' resources.
     @total = @entities.length
     populate_entities unless @entities.empty?
     params[:format] = nil if params[:format]
@@ -109,6 +112,7 @@ class ConnectorController < ApplicationController
     
   end  
   
+  # Return an explain document for search
   def explain
     @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
     @config = AppConfig.connector
@@ -125,6 +129,7 @@ class ConnectorController < ApplicationController
     end    
   end
   
+  # Return a feed based on a CQL query
   def search
     if !params[:query] || params[:query].empty?
       render :template => 'connector/diagnostics/7.xml.builder', :status => 400, :locals => {:message=>"'query'"}
@@ -143,7 +148,6 @@ class ConnectorController < ApplicationController
     else
       limit = AppConfig.connector['page_size']
     end
-    
 
     if params[:entity] == 'items'
       sync_models
@@ -165,16 +169,15 @@ class ConnectorController < ApplicationController
       return      
     end
     
+    # Turn the CQL query into something that makes sense internally (either SQL or Solr)
     cql_query = base_class.cql_tree_walker(cql)  
     if params[:entity] == 'items'
       @entities = base_class.find_by_cql(cql_query, {:offset=>@offset, :limit=>limit, :sort=>sort})      
       @total = @entities.total_results
     else
-
       @total = base_class.count(:conditions=>cql_query)      
       @entities = base_class.find(:all, :conditions=>cql_query, :offset=>@offset, :limit=>limit)
     end
-
 
     populate_entities if @entities.length > 0
     params[:format] = nil if params[:format]
@@ -185,38 +188,43 @@ class ConnectorController < ApplicationController
   end
 
   private
+  
+  # Perform the common tasks needed for most of the actions.
   def init_feed
     if (params[:entity] && params[:entity] == 'actors') || (params[:scope] && params[:scope] == 'actors')
       @auth_user = authenticate
     end
     @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
     @format = determine_format(params)
-    #sync_models
   end
+  
+  # Do any post processing necessary for the models.
+  # TODO: deprecate in favor of AltoModel.post_hook
   def populate_entities    
     @entities.first.class.find_associations(@entities)
+    @entities.first.class.post_hooks(@entities, @format, params)
   end
+  
+  # Maps the format parameter to whatever needs to be done locally.
+  # TODO: determine if params[:format] really needs to be set to nil
   def determine_format(params)
-    # this needs to be fixed so it's appropriate for the entity
+    # FIXME: this needs to be fixed so it's appropriate for the entity
     if params[:format]
       return params[:format]
     end
     AppConfig.connector['entities'][params[:entity]]['default']
   end
   
+  # Asynchronously synchronize the Model and their corresponding Solr index for paging.
   def sync_models
     [ItemHoldingCache, BorrowerCache, WorkMetaCache].each do | cache |
       spawn(:method => :thread) do
         cache.sync
       end      
     end
-    #case params[:entity]
-    #when 'items' then ItemHoldingCache.sync
-    #when 'actors' then BorrowerCache.sync
-    #when 'resources' then WorkMetaCache.sync
-    #end
   end
   
+  # Translate the incoming 'id' parameter to something more appropriate for returning results
   def id_translate(id)
     #if the request is simple (integer, list or nil) return that
     return [] if id.empty?
@@ -243,22 +251,21 @@ class ConnectorController < ApplicationController
     end
     return ids
   end  
-  
-  private
-    def authenticate
-      user = nil
-      authenticate_or_request_with_http_basic do |id, password| 
-        if id == AppConfig.connector['administrator']['username'] && password == AppConfig.connector['administrator']['password']
-          user = AuthenticatedUser.new(:user=>:jangle_administrator)
-        elsif borrower = Borrower.find_by_BARCODE_and_PIN(id, password)
-          user = AuthenticatedUser.new(:user=>id, :password=>password, :borrower=>borrower, :borrower_id=>borrower.BORROWER_ID)
-        end
-      end
-      user
-    end
-    
-    class AuthenticatedUser < OpenStruct
-    end
 
+  # Authenticate the user
+  def authenticate
+    user = nil
+    authenticate_or_request_with_http_basic do |id, password| 
+      if id == AppConfig.connector['administrator']['username'] && password == AppConfig.connector['administrator']['password']
+        user = AuthenticatedUser.new(:user=>:jangle_administrator)
+      elsif borrower = Borrower.find_by_BARCODE_and_PIN(id, password)
+        user = AuthenticatedUser.new(:user=>id, :password=>password, :borrower=>borrower, :borrower_id=>borrower.BORROWER_ID)
+      end
+    end
+    user
+  end
   
+  # Simple authenticated user object to use in the methods.
+  class AuthenticatedUser < OpenStruct
+  end
 end

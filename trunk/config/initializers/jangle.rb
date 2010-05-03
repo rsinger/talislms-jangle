@@ -6,3 +6,5 @@ require RAILS_ROOT+'/lib/index_cache'
 BorrowerCache.sync
 WorkMetaCache.sync
 ItemHoldingCache.sync
+
+AppConfig.connector['base_currency'] = Currency.base_currency

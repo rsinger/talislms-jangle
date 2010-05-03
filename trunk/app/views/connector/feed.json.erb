@@ -32,12 +32,9 @@
         unless alt_fmts.empty?
           ent["alternate_formats"] = alt_fmts
         end
-        if entity.relationships          
-            ent["relationships"] = {}
-            entity.relationships.each do | uri, path |
-              ent["relationships"][uri]= "#{entity_uri(entity.identifier)}#{path}"
-            end 
-        end
+        
+        ent["relationships"] = set_relationships(entity)
+
         if entity.respond_to?(:links)
           ent["links"] = entity.links
         end

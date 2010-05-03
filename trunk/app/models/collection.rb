@@ -5,6 +5,55 @@ class Collection < AltoModel
   has_many :work_metas, :through=>:titles
   attr_accessor :has_works, :via
   alias :identifier :id
+  
+  # Associates the related entities to a single Collection or array of Collections
+  # Currently disabled and assumes that a Collection has Resources related to it
+  # due to a missing index relating WORKS and COLLECTION (on the TITLE table)
+  def self.find_associations(entity_list)
+    [*entity_list].each do |e|
+      e.has_works = true
+    end
+    #ids = []
+    #entities = {}
+    #entity_list.each do | entity |
+    #  ids << entity.id
+    #  entities[entity.id] = entity
+    #end
+    
+    # It appears an index is missing for COLLECTION_ID on TITLE since this query is 
+    # painfully slow.
+    #Title.find_by_sql(["SELECT DISTINCT COLLECTION_ID FROM TITLE WHERE COLLECTION_ID IN (?) AND WORK_ID IS NOT NULL", ids]).each do | title |
+    #  entities[title.COLLECTION_ID].has_works = true
+    #end
+  end  
+  
+  # Find all collections by category
+  # TODO: actually advertise the categories
+  def self.find_by_filter(filter, opts={})
+    opts[:offset] ||=0
+    opts[:limit] ||= AppConfig.connector['page_size']
+    if filter == 'ill'
+      collections = ResultSet.new(self.find_all_by_INTERLOANS('T',:limit=>opts[:limit], :offset=>opts[:offset]))
+      collections.total_results = self.count_by_INTERLOANS('T')
+    end
+    collections
+  end
+  
+  # Returns the first page of Collections.  It is assumed there will not be more than
+  # 100 collections defined, but if there are, there will need to be a CollectionCache
+  # created and refactored to use Solr.
+  def self.page(offset, limit)
+    result_set =  ResultSet.new(self.all(:limit=>limit))
+    result_set.total_results = self.count
+    result_set
+  end  
+  
+  # Collections have no created timestamp available
+  def created
+    nil
+  end  
+  
+  # Serialize the Collection as Dublin Core  
   def dc
     xml = Builder::XmlMarkup.new
     xml.rdf :RDF, {"xmlns:rdf"=>'http://www.w3.org/1999/02/22-rdf-syntax-ns#'} do | rdf |
@@ -17,50 +66,18 @@ class Collection < AltoModel
     xml.target!
   end
   
-  def title
-    self.NAME
-  end
-  
-  def updated
-    Time.now.xmlschema
-  end
-  
-  def relationships
-    relationships = nil
-    if self.has_works
-      relationships = {'http://jangle.org/vocab/Entities#Resource' => "/resources/"}
-    end
-    relationships
-  end
-  def entry(format)
-    relationships = {}
-  
+  # Returns the Jangle entry.
+  # TODO: this needs to be deprecated into a view.  
+  def entry(format)  
     {:id=>self.uri,:title=>self.NAME,:updated=>updated,:content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],:relationships=>relationships,
       :content_type=>AppConfig.connector['record_types'][format]['content-type']}
-  end
-    
-  def self.find_associations(entity_list)
-    ids = []
-    entities = {}
-    entity_list.each do | entity |
-      ids << entity.id
-      entities[entity.id] = entity
-    end
-    Title.find_by_sql(["SELECT DISTINCT COLLECTION_ID FROM TITLE WHERE COLLECTION_ID IN (?) AND WORK_ID IS NOT NULL", ids]).each do | title |
-      entities[title.COLLECTION_ID].has_works = true
-    end
   end  
   
-  def self.find_by_filter(filter, opts={})
-    opts[:offset] ||=0
-    opts[:limit] ||= AppConfig.connector['page_size']
-    if filter == 'ill'
-      collections = ResultSet.new(self.find_all_by_INTERLOANS('T',:limit=>opts[:limit], :offset=>opts[:offset]))
-      collections.total_results = self.count_by_INTERLOANS('T')
-    end
-    collections
-  end  
+  # Gets the related Resources associated with a Collection
+  # TODO: this almost certainly doesn't work right.  It probably
+  # makes more sense to include the Collections in WorkMeta.to_doc and
+  # retrieve them via WorkMetaCache
   def get_relationships(rel, filter, offset, limit) 
     related_entities = []
     if rel == 'resources'
@@ -71,4 +88,36 @@ class Collection < AltoModel
     end    
     related_entities
   end  
+  
+  # Convenience method to normalize Sybase's (or Alto's?) booleans to actual Booleans
+  def interloan?
+    if self.INTERLOANS == "T"
+      true
+    else
+      false
+    end
+  end
+
+  # Sets the relationships to other resources
+  # TODO: this really needs to move into a helper  
+  def relationships
+    relationships = nil    
+    if self.has_works
+      relationships = {'http://jangle.org/vocab/Entities#Resource' => "/resources/"}
+    end
+    relationships
+  end  
+  
+  # Return a "title" for feed responses
+  def title
+    self.NAME
+  end  
+  
+  # Collections have no timestamps whatsoever, but Jangle (via Atom) request a last-modified
+  # value.  We're just returning the current timestamp, always.
+  # TODO: set this to something that won't break caching on every request
+  def updated
+    Time.now
+  end
+
 end

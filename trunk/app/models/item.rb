@@ -9,63 +9,94 @@ class Item < AltoModel
   belongs_to :classification, :foreign_key=>"CLASS_ID"
   belongs_to :location, :foreign_key=>"ACTIVE_SITE_ID"
   has_many :ill_requests, :foreign_key=>"ITEM_ID"
+  belongs_to :work, :foreign_key=>"WORK_ID"
   
-  attr_accessor :status, :loan_type, :via
+  attr_accessor :status, :loan_type, :via, :current_loans, :item_type, :item_status
   
+  # Class methods
+  
+  # Given a list of Items, sets the appropriate status
+  # TODO: this needs to be broken up and moved into Item.post_hooks
+  # to be more efficient
+  def self.find_associations(entity_list)
+    status_ids = []
+    loan_type_ids = []
+    status_map = {}
+    loan_type_map = {}
+    entities = {}
+    entity_list.each do | entity |
+      next unless entity.is_a?(Item)
+      entities[entity.id] = entity
+      status_ids << entity.STATUS_ID
+      status_map[entity.STATUS_ID] ||=[]
+      status_map[entity.STATUS_ID] << entity
+      loan_type_ids << entity.TYPE_ID
+      loan_type_map[entity.TYPE_ID] ||=[]
+      loan_type_map[entity.TYPE_ID] << entity
+    end
+    status_ids.uniq!
+    loan_type_ids.uniq!
+    states = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(6,status_ids)
+    loan = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(1,loan_type_ids)  
+    states.each do | state |
+      status_map[state.TYPE_STATUS].each do | entity |
+        entity.status = state
+      end
+    end
+    loan.each do | l |
+      loan_type_map[l.TYPE_STATUS].each do | entity |
+        entity.loan_type = l
+      end
+    end
+  end  
+  
+  # Find Borrowers and get their associated WorkMeta, Classification, Location and Loans in the most
+  # efficient way
+  # TODO: some of this possibly should be migrated to Item.post_hooks (esp. Loans, Classification and Location) 
+  def self.find_eager(ids)
+    items = self.find(:all, :conditions=>{:ITEM_ID=>ids}, :include=>[:work_meta, :classification, :location])
+    i = {}
+    items.each do |item|
+      i[item.id] = item
+      if item.work_meta
+        i[item.id].add_relationship('resource')
+      end
+    end
+    Loan.find_all_by_ITEM_ID_and_CURRENT_LOAN(ids, "T").each do |loan|
+      i[loan.ITEM_ID].current_loans ||=[]
+      i[loan.ITEM_ID].current_loans << loan
+      i[loan.ITEM_ID].add_relationship('actor')
+    end
+    items
+  end   
+  
+  # ITEM.EDIT_DATE is Item's last-modified field
   def self.last_modified_field
     "EDIT_DATE"
   end
   
-  def title
-    case available?
-    when true then "Available"
-    else "Unavailable"
+  def self.post_hooks(items, format, params)
+    if format == 'alto'
+      type = []
+      status = []
+      items.each do |i|
+        type << i.TYPE_ID  
+        status << i.STATUS_ID
+      end
+      type_status = {1=>{},6=>{}}
+      TypeStatus.find(:all, :conditions=>["(TYPE_STATUS IN (?) AND SUB_TYPE = 1) OR (TYPE_STATUS IN (?) AND SUB_TYPE = 6)", type, status]).each do |ts|
+        type_status[ts.SUB_TYPE][ts.TYPE_STATUS] = ts
+      end
+      items.each do |i|
+        i.item_type = type_status[1][i.TYPE_ID]
+        i.item_status = type_status[6][i.STATUS_ID]
+      end
     end
   end
-
-  def to_doc
-    edit_date = (self.EDIT_DATE||self.CREATE_DATE||Time.now)
-    edit_date.utc
-    doc = {:id=>"Item_#{self.ITEM_ID}", :last_modified=>edit_date.xmlschema, :model=>self.class.to_s, :model_id=>self.ITEM_ID}
-    doc[:type_id] = self.TYPE_ID
-    doc[:status_id] = self.STATUS_ID    
-    doc[:location_id] = self.ACTIVE_SITE_ID
-    doc[:format_id] = self.FORMAT_ID
-    doc
-  end
   
-  def identifier
-    "I-#{self.id}"
-  end
+  # Instance methods
   
-  def updated
-    (self.EDIT_DATE||self.CREATE_DATE||Time.now).xmlschema
-  end
-  
-  def daia_service
-    return nil unless self.loan_type
-    svc = case self.loan_type.NAME
-    when 'REFERENCE' then 'presentation'
-    when 'Not for Loan' then 'presentation'
-    when 'INTERLOAN' then 'interloan'
-    else 'loan'
-    end
-    svc
-  end
-  
-  def relationships
-    relationships = nil
-    if self.WORK_ID
-      relationships = {'http://jangle.org/vocab/Entities#Resource' => "#{self.uri}/resources/"}
-    end
-    relationships
-  end
-  
-  def categories
-    add_category('item')
-    @categories
-  end
-  
+  # The display message for the item's availability status
   def availability_message
     message = ""
     if available?
@@ -77,7 +108,7 @@ class Item < AltoModel
       else
         message = self.status.NAME
       end      
-    elsif curr_loan = self.loans.find(:first, :conditions=>"CURRENT_LOAN = 'T'")
+    elsif self.current_loans.is_a?(Array) and curr_loan = self.current_loans.first
       #
       loan_type = LoanRule.find(:first, :conditions=>{:LOCATION_PROFILE_ID=>self.location.LOCATION_PROFILE_ID,
         :BORROWER_TYPE=>curr_loan.borrower.TYPE_ID, :ITEM_TYPE=>self.TYPE_ID, :LOAN_TYPE=>curr_loan.LOAN_TYPE})
@@ -93,23 +124,134 @@ class Item < AltoModel
       end
     end
     message
+  end  
+  
+  # Convenience method to return a boolean reflecting an item's current availability status
+  def available?
+    return false if self.current_loans.is_a?(Array)
+
+    if self.status
+      unless status.TYPE_STATUS == 5
+        return false
+      end
+    end
+    true
+  end  
+  
+  # Return an array of categories (should always include 'item')
+  # TODO: make the default (item) category locally customizable
+  def categories
+    add_category('item')
+    @categories
+  end  
+  
+  # Returns the amount owed (or predicted) by a particular Borrower on the given Item.
+  # Returns a Float.
+  def charges(borrower_id)
+    charges = {}
+    self.loans.find_all_by_BORROWER_ID(borrower_id).each do | loan |
+      if loan.CURRENT_LOAN == "F"
+        loan_charges = loan.fines
+        if loan_charges > 0.00
+          charges[:loans] = loan_charges
+        end
+      else
+        due_date = loan.DUE_DATE.strftime("%m/%d/%Y %H:%M:%S")
+        calc_fine_sp = self.connection.exec_stored_procedure("exec CL_CALC_FINE_SP #{loan.LOAN_TYPE}, '#{due_date}', '#{loan.CREATE_LOCATION}', #{loan.borrower.TYPE_ID}, #{loan.item.TYPE_ID}")
+        if calc_fine_sp.first.values.first.to_f > 0.00
+          charges[:loans] = calc_fine_sp.first.values.first.to_f
+        end
+      end
+    end
+    charges
+  end  
+  
+  # Record created timestamp
+  def created
+    self.CREATE_DATE
+  end  
+  
+  # Returns the DAIA service type based on LOAN_TYPE.
+  # TODO: this should be locally customizable in config/connector.yml
+  def daia_service
+    return nil unless self.loan_type
+    svc = case self.loan_type.NAME
+    when 'REFERENCE' then 'presentation'
+    when 'Not for Loan' then 'presentation'
+    when 'INTERLOAN' then 'interloan'
+    else 'loan'
+    end
+    svc
+  end 
+  
+  # Returns the projected availability timestamp of an item.  If the item is currently
+  # available returns .now()
+  def date_available
+    if available?
+      return DateTime.now
+    else
+      if self.current_loans.is_a?(Array) && curr_loan = self.current_loans.first
+        return curr_loan.DUE_DATE
+      end
+    end
   end
   
+  # Returns the Jangle entry.
+  # TODO: this needs to be deprecated into a view.  
   def entry(format)
-
     {:id=>self.uri,:title=>title,:updated=>self.EDIT_DATE,:content=>self.send(format.to_sym),
       :format=>AppConfig.connector['record_types'][format]['uri'],:relationships=>relationships,
       :content_type=>AppConfig.connector['record_types'][format]['content-type']}
   end  
   
-  def to_marcxml
-    return marc.to_xml
-  end
+  # Gets the related entities to the Item and sets appropriate categories based on relationship
+  # (Loan, Reservation, Interloan, etc.)
+  # TODO: this should become a class method, since we don't actually *need*
+  # the Items themselves to accomplish this (and would be more efficient)  
+  def get_relationships(rel, filter, offset, limit, borrower_id=nil) 
+    related_entities = []
+    if rel == 'resources'
+      related_entities << self.work_meta
+    elsif rel == 'actors'
+      if filter.nil? or filter == 'loan'
+        self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
+          loan.borrower.add_category('loan')
+          related_entities << loan.borrower unless borrower_id && borrower_id != loan.borrower.BORROWER_ID
+        end
+      end
+      if filter.nil? or filter == 'hold'
+        self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
+          rsv.borrower.add_category('hold')
+          related_entities << rsv.borrower unless borrower_id && borrower_id != rsv.borrower.BORROWER_ID
+        end
+      end
+      if filter.nil? or filter == 'interloan'
+        self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
+          ill.borrower.add_category('interloan')
+          related_entities << ill.borrower unless borrower_id && borrower_id != ill.borrower.BORROWER_ID
+        end      
+      end
+    end
+    related_entities.each do | rel |
+      rel.via = self
+    end    
+    related_entities
+  end  
   
-  def to_marc
-    return marc.to_marc
+  # Because Holdings and Items are merged as Jangle 'items', we need to disambiguate the
+  # PK with which table it came from (for Items, use 'I-')  
+  def identifier
+    "I-#{self.id}"
+  end 
+
+  def item_status
+    return @item_status || TypeStatus.find_by_TYPE_STATUS_and_SUB_TYPE(self.STATUS_ID, 6)
   end
-  
+    
+  def item_type
+    return @item_type || TypeStatus.find_by_TYPE_STATUS_and_SUB_TYPE(self.TYPE_ID, 1)
+  end
+  # Create a MARC Format for Holdings Display (MFHD) record
   def marc
     record = MARC::Record.new
     record.leader[5] = 'n'    
@@ -158,120 +300,52 @@ class Item < AltoModel
     end
     record << item_basic
     record
-    
-  end
-  
-  def available?
-    self.loans.each do | loan |
-      if loan.CURRENT_LOAN == 'T'
-        return false
-      end
-    end
-
-    if self.status
-      unless status.TYPE_STATUS == 5
-        return false
-      end
-    end
-    true
-  end
-  
-  def date_available
-    if available?
-      return DateTime.now.xmlschema
-    else
-      if curr_loan = self.loans.find(:first, :conditions=>"CURRENT_LOAN = 'T'")
-        return curr_loan.DUE_DATE.xmlschema
-      end
-    end
-  end
-  
-  def self.find_eager(ids)
-    return self.find(:all, :conditions=>{:ITEM_ID=>ids}, :include=>[:loans, :classification, :location])
-  end  
-  
-  def self.find_associations(entity_list)
-    status_ids = []
-    loan_type_ids = []
-    status_map = {}
-    loan_type_map = {}
-    entities = {}
-    entity_list.each do | entity |
-      next unless entity.is_a?(Item)
-      entities[entity.id] = entity
-      status_ids << entity.STATUS_ID
-      status_map[entity.STATUS_ID] ||=[]
-      status_map[entity.STATUS_ID] << entity
-      loan_type_ids << entity.TYPE_ID
-      loan_type_map[entity.TYPE_ID] ||=[]
-      loan_type_map[entity.TYPE_ID] << entity
-    end
-    status_ids.uniq!
-    loan_type_ids.uniq!
-    states = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(6,status_ids)
-    loan = TypeStatus.find_all_by_SUB_TYPE_and_TYPE_STATUS(1,loan_type_ids)  
-    states.each do | state |
-      status_map[state.TYPE_STATUS].each do | entity |
-        entity.status = state
-      end
-    end
-    loan.each do | l |
-      loan_type_map[l.TYPE_STATUS].each do | entity |
-        entity.loan_type = l
-      end
-    end
-  end 
-  
-  def get_relationships(rel, filter, offset, limit, borrower_id=nil) 
-    related_entities = []
-    if rel == 'resources'
-      related_entities << self.work_meta
-    elsif rel == 'actors'
-      if filter.nil? or filter == 'loan'
-        self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
-          loan.borrower.add_category('loan')
-          related_entities << loan.borrower unless borrower_id && borrower_id != loan.borrower.BORROWER_ID
-        end
-      end
-      if filter.nil? or filter == 'hold'
-        self.reservations.find(:all, :conditions=>"STATE < 5").each do | rsv |
-          rsv.borrower.add_category('hold')
-          related_entities << rsv.borrower unless borrower_id && borrower_id != rsv.borrower.BORROWER_ID
-        end
-      end
-      if filter.nil? or filter == 'interloan'
-        self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
-          ill.borrower.add_category('interloan')
-          related_entities << ill.borrower unless borrower_id && borrower_id != ill.borrower.BORROWER_ID
-        end      
-      end
-    end
-    related_entities.each do | rel |
-      rel.via = self
-    end    
-    related_entities
-  end
-  
-  def charges(borrower_id)
-    charges = {}
-    self.loans.find_all_by_BORROWER_ID(borrower_id).each do | loan |
-      if loan.CURRENT_LOAN == "F"
-        loan_charges = loan.fines
-        if loan_charges > 0.00
-          charges[:loans] = loan_charges
-        end
-      else
-        due_date = loan.DUE_DATE.strftime("%m/%d/%Y %H:%M:%S")
-        calc_fine_sp = self.connection.exec_stored_procedure("exec CL_CALC_FINE_SP #{loan.LOAN_TYPE}, '#{due_date}', '#{loan.CREATE_LOCATION}', #{loan.borrower.TYPE_ID}, #{loan.item.TYPE_ID}")
-        if calc_fine_sp.first.values.first.to_f > 0.00
-          charges[:loans] = calc_fine_sp.first.values.first.to_f
-        end
-      end
-    end
-    charges
-  end
-
-  def set_uri(base, path)
-    @uri = "#{base}/#{path}/#{identifier}"
   end   
+  
+  # Returns an Array of NCIP Request Types that apply to this Item
+  def ncip_request_types
+    ncip_types = []
+    ncip_types << "Loan" if @categories.index('loan')
+    ncip_types << "Hold" if @categories.index('hold')    
+    ncip_types
+  end  
+    
+  # Return the title for the feed entry, should be:
+  # Available or Unavailable
+  # TODO: Perhaps "availability_message" is more appropriate
+  def title
+    case available?
+    when true then "Available"
+    else "Unavailable"
+    end
+  end
+
+  # Returns a Hash to index in Solr.  Note the type, status, location and format attributes to potentially
+  # use as categories later
+  def to_doc
+    edit_date = (self.EDIT_DATE||self.CREATE_DATE||Time.now)
+    edit_date.utc
+    doc = {:id=>"Item_#{self.ITEM_ID}", :last_modified=>edit_date.xmlschema, :model=>self.class.to_s, :model_id=>self.ITEM_ID}
+    doc[:type_id] = self.TYPE_ID
+    doc[:status_id] = self.STATUS_ID    
+    doc[:location_id] = self.ACTIVE_SITE_ID
+    doc[:format_id] = self.FORMAT_ID
+    doc
+  end
+  
+  # Returns a binary (ISO 27709) MFHD
+  def to_marc
+    marc.to_marc
+  end
+
+  # Returns a MARCXML MFHD
+  def to_marcxml
+    marc.to_xml
+  end  
+    
+  # Last modified
+  def updated
+    (self.EDIT_DATE||self.CREATE_DATE||Time.now)
+  end
+  
 end

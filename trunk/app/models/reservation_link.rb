@@ -3,6 +3,7 @@ class ReservationLink < AltoModel
   set_primary_keys :RESERVATION_ID, :TARGET_ID, :TYPE
   belongs_to :reservation
   
+  # For the link in question, return the appropriate Work or Item.
   def link
     case self.TYPE
     when 0 then Item.find(self.TARGET_ID)
