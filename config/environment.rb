@@ -43,18 +43,31 @@ Rails::Initializer.run do |config|
   # config.i18n.default_locale = :de
   #require 'jdbc_adapter'
   config.gem 'jrexml', ">= 0.5.3"
+  config.gem 'rack', '1.0.1'
   config.gem 'marc', ">= 0.3.0"
   config.gem 'vpim' 
   config.gem 'composite_primary_keys'
   config.gem 'cql-ruby', :lib => 'cql_ruby'
-  config.gem 'rsolr', :version => "0.11.0"
-  Dir['lib/apache-solr-1.4.0/dist/*.jar'].each{|jar|require jar}
-  Dir['lib/apache-solr-1.4.0/lib/*.jar'].each{|jar|require jar}  
-  gem 'rsolr', "0.11.0"
-  require 'rsolr'
-  AppConfig.solr = RSolr.direct_connect(AppConfig.connector['solr_opts'])
+  #config.gem 'rsolr-direct'
+  config.gem 'builder'
+  config.gem 'rsolr'
+  config.gem 'rsolr-direct'
+  case AppConfig.connector['solr_opts'][:connection]
+  when "standard"    
+    require 'rsolr'
+    AppConfig.solr = RSolr.connect :url=>AppConfig.connector['solr_opts'][:solr_home]
+  when "direct"    
+    require 'rsolr-direct'
+    RSolr.load_java_libs    
+    AppConfig.solr = RSolr.connect :direct, :solr_home=>AppConfig.connector['solr_opts'][:solr_home]
+  end
+  #require 'rsolr-direct'
+  #RSolr.load_java_libs
+  #Dir[RAILS_ROOT+'/lib/apache-solr-1.4.0/dist/*.jar'].each{|jar|require jar}
+  #Dir[RAILS_ROOT+'/lib/apache-solr-1.4.0/lib/*.jar'].each{|jar|require jar}  
+  #dc = org.apache.solr.servlet.DirectSolrConnection.new(AppConfig.connector['solr_opts'][:direct][:solr_home], AppConfig.connector['solr_opts'][:direct][:solr_data], nil)
+  #AppConfig.solr = RSolr.connect :direct, dc
 end
-
 at_exit do
   AppConfig.solr.connection.close
 end

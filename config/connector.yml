@@ -8,7 +8,10 @@ administrator:
     password: jangle
 
 solr_opts:
-    :home_dir: "./lib/apache-solr-1.4.0"
+    :connection: direct
+
+    :solr_home: "./lib/solr"
+        
 
 record_types:
     talis_soa_borrower:
@@ -71,7 +74,19 @@ record_types:
     atom:
         uri: "http://jangle.org/vocab/formats#http://www.w3.org/2005/Atom"
         content-type: application/atom+xml
-
+    ncip2-LookupRequest:
+        uri: "http://jangle.org/vocab/formats#NCIP/2.0/LookupRequestResponse"
+        content-type: application/xml 
+    ncip2-LookupItem:
+        uri: "http://jangle.org/vocab/formats#NCIP/2.0/LookupItemResponse"
+        content-type: application/xml
+    ncip2-LookupUser:   
+        uri: "http://jangle.org/vocab/formats#NCIP/2.0/LookupUserResponse"
+        content-type: application/xml     
+    alto:
+        uri: "http://schema.talis.com/alto/jangle/v1/"
+        content-type: application/xml
+        
 context-sets:
     dc:
         identifier: info:srw/cql-context-set/1/dc-v1.1
@@ -89,7 +104,7 @@ categories:
         scheme: "http://jangle.org/vocab/terms#copy"
     holding:
         scheme: "http://jangle.org/vocab/terms#holding"        
-    reservation:
+    hold:
         scheme: "http://jangle.org/vocab/terms#hold"  
 
 
@@ -98,8 +113,9 @@ entities:
         title: Borrowers
         record_types:            
             vcard: vcard.erb
-            #talis_soa_borrower: talis_borrower.xml.builder
-        default: vcard
+            ncip2-LookupUser: ncip.xml.builder
+            alto: alto.xml.builder
+        default: alto
         search:
             longname: Search Borrower records in Alto
             description: Borrower records search.
@@ -122,8 +138,9 @@ entities:
             marc: marc.erb
             mods: marc.erb
             dc: marc.erb
-            oai_dc: marc.erb   
-        default: marcxml         
+            oai_dc: marc.erb  
+            alto: alto.xml.builder 
+        default: alto         
         search:
             longname: Search Bibliographic records in Alto
             description: Bibliographic records search.  Defaults to keyword anywhere.
@@ -150,9 +167,11 @@ entities:
             dlfexpanded: dlfexpanded.xml.builder
             marc: marc.erb
             marcxml: marc.erb
-            #talis_soa_availability: talis_availability.xml.builder
+            ncip2-LookupItem: ncip_2_0.xml.builder
+            ncip2-LookupRequest: ncip_2_0.xml.builder
+            alto: alto.xml.builder
             daia: daia.xml.builder
-        default: marcxml
+        default: alto
         search:
             longname: Search Item records in Alto
             description: Item records search.
@@ -169,12 +188,14 @@ entities:
         categories:
             - holding
             - item
+            - hold
             
     collections:
         title: Categories
         record_types:
             dc: dc.xml.builder
-        default: dc
+            alto: alto.xml.builder
+        default: alto
         search: false
         options:
             - get

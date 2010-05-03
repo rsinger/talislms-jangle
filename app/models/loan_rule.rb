@@ -4,6 +4,8 @@ class LoanRule < AltoModel
   
   belongs_to :due_date, :foreign_key=>:DUE_DATE_ID
   
+  # Returns a Location based on LOCATION_PROFILE_ID
+  # FIXME: I'm pretty sure this is totally wrong.
   def location
     return Location.find_by_LOCATION_PROFILE_ID(self.LOCATION_PROFILE_ID)
   end

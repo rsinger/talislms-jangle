@@ -8,10 +8,10 @@ class IndexCache
     deletions = []
     cache_results.each do | cache_result |
       unless in_master?(cache_result, model_results)
-        deletions << cache_result["id"]
+        AppConfig.solr.delete_by_id cache_result["id"]
       end
     end
-    AppConfig.solr.delete_by_id deletions
+    AppConfig.solr.commit
   end
   
   def self.in_master?(cache_result, model_results)
