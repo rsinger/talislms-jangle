@@ -4,7 +4,7 @@ xml.alto :Address, :id=>entity.ADDRESS_ID do |address|
     address.alto :"line#{line_no}", entity.attributes["LINE_#{line_no}"]
   end
   if entity.POST_CODE
-    address.alto :"post-code", entity.POST_CODE
+    address.alto :postcode, entity.POST_CODE
   end
   if entity.TELEPHONE_NO
     phone = entity.TELEPHONE_NO
