@@ -32,6 +32,6 @@ xml.alto :Work, :id=>entity.id do |work|
         work.alto :"sort", entity.work.TITLE_DISPLAY[entity.work.TITLE_FILING_OFFSET.to_i..-1]
       end
     end
-    work.alto :classificationDisplay", entity.work.CLASS_DISPLAY
+    work.alto :classificationDisplay, entity.work.CLASS_DISPLAY
   end
 end
