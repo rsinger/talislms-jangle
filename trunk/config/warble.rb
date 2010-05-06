@@ -22,7 +22,7 @@ Warbler::Config.new do |config|
   # in lib (and not otherwise excluded) then they need not be mentioned here.
   # JRuby and JRuby-Rack are pre-loaded in this list.  Be sure to include your
   # own versions if you directly set the value
-   config.java_libs += FileList["lib/java/*.jar", "lib/apache-solr-1.4.0/dist/", "lib/apache-solr-1.4.0/lib"]
+   config.java_libs += FileList["lib/java/*.jar", "lib/apache-solr-1.4.0/dist/", "lib/solr-jars/*.jar", "lib/apache-solr-1.4.0/lib"]
 
   # Loose Java classes and miscellaneous files to be placed in WEB-INF/classes.
   # config.java_classes = FileList["target/classes/**.*"]
