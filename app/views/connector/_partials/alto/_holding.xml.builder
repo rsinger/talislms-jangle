@@ -16,6 +16,6 @@ xml.alto :Holding, :id=>entity.id, :work=>entity.WORK_ID do |holding|
     xml << render(:partial=>"/connector/_partials/alto/classification.xml.builder", :locals=>{:entity=>entity.classification})
   end
   if entity.SUFFIX
-    item.alto :"classification-suffix", entity.SUFFIX
+    holding.alto :"classification-suffix", entity.SUFFIX
   end
 end

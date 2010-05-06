@@ -80,6 +80,7 @@ class Item < AltoModel
       type = []
       status = []
       items.each do |i|
+        next unless i.is_a?(Item)
         type << i.TYPE_ID  
         status << i.STATUS_ID
       end
@@ -88,6 +89,7 @@ class Item < AltoModel
         type_status[ts.SUB_TYPE][ts.TYPE_STATUS] = ts
       end
       items.each do |i|
+        next unless i.is_a?(Item)
         i.item_type = type_status[1][i.TYPE_ID]
         i.item_status = type_status[6][i.STATUS_ID]
       end

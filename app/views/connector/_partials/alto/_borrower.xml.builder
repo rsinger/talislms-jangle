@@ -46,5 +46,8 @@ xml.alto :Borrower, :id=>entity.id do |borrower|
   entity.contacts.each do |contact|
     xml << render(:partial=>"/connector/_partials/alto/contact.xml.builder", :locals=>{:entity=>contact}) 
   end
-
+  
+  borrower.alto :reservations do |res|
+    
+  end
 end

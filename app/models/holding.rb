@@ -164,7 +164,7 @@ class Holding < AltoModel
   # Return a Hash to store in Solr.  Note that we include the LOCATION_ID in case we ever want to 
   # include categories defined by location.
   def to_doc
-    doc = {:id=>"Holding_#{self.HOLDINGS_ID}", :last_modified=>updated, :model=>self.class.to_s, :model_id=>self.HOLDINGS_ID}
+    doc = {:id=>"Holding_#{self.HOLDINGS_ID}", :last_modified=>updated.xmlschema, :model=>self.class.to_s, :model_id=>self.HOLDINGS_ID}
     doc[:location_id] = self.LOCATION_ID
     doc
   end

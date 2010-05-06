@@ -100,7 +100,7 @@ class Borrower < AltoModel
     
     if format == 'alto'
       locs = {}
-      Location.find(locations).each do |loc|
+      Location.find(:all, :conditions=>["LOCATION_ID IN (?)", locations]).each do |loc|
         locs[loc.id] = loc
       end
       contact_points = {}
