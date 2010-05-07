@@ -110,6 +110,20 @@ class Item < AltoModel
       else
         message = self.status.NAME
       end      
+    elsif @categories.index('hold')
+      if self.via && self.via.is_a?(Borrower)
+        rsv = self.reservations.find(:first, :conditions=>["BORROWER_ID = ? AND STATE < 5", self.via.id])
+        if rsv
+          state = TypeStatus.find_by_SUB_TYPE_and_TYPE_STATUS(10,rsv.STATE)
+          if state
+            message = state.NAME
+          end
+        end          
+      end
+      if message.empty?
+        rsv = self.reservations.find(:all, :conditions=>"STATE < 5")
+        message = "Reserved"
+      end
     elsif self.current_loans.is_a?(Array) and curr_loan = self.current_loans.first
       #
       loan_type = LoanRule.find(:first, :conditions=>{:LOCATION_PROFILE_ID=>self.location.LOCATION_PROFILE_ID,
