@@ -206,13 +206,11 @@ class ConnectorController < ApplicationController
     @entities.each do |e|
       classes << e.class unless classes.index(e.class)
     end
-    threads = []
+
     classes.each do |c|
-      threads << Thread.new{c.post_hooks(@entities, @format, params)}
+      c.post_hooks(@entities, @format, params)
     end
-    threads.each do |t|
-      t.join
-    end
+
     #@entities.first.class.post_hooks(@entities, @format, params)
   end
   
