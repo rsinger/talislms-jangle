@@ -6,8 +6,8 @@ class ReservationLink < AltoModel
   # For the link in question, return the appropriate Work or Item.
   def link
     case self.TYPE
-    when 0 then Item.find(self.TARGET_ID)
-    when 1 then Work.find(self.TARGET_ID)
+    when 0 then Item.find_eager(self.TARGET_ID)
+    when 1 then WorkMeta.find_eager(self.TARGET_ID)
     end
   end
 end
