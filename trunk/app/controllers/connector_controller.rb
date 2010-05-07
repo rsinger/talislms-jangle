@@ -202,7 +202,18 @@ class ConnectorController < ApplicationController
   # TODO: deprecate in favor of AltoModel.post_hook
   def populate_entities    
     @entities.first.class.find_associations(@entities)
-    @entities.first.class.post_hooks(@entities, @format, params)
+    classes = []
+    @entities.each do |e|
+      classes << e.class unless classes.index(e.class)
+    end
+    threads = []
+    classes.each do |c|
+      threads << Thread.new{c.post_hooks(@entities, @format, params)}
+    end
+    threads.each do |t|
+      t.join
+    end
+    #@entities.first.class.post_hooks(@entities, @format, params)
   end
   
   # Maps the format parameter to whatever needs to be done locally.

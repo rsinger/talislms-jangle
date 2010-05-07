@@ -62,6 +62,7 @@ class Borrower < AltoModel
     ids = []
     locations = []
     borrowers.each do | entity |
+      next unless entity.is_a?(Borrower)
       ids << entity.id
       entities[entity.id] = entity
       if format == 'alto'
@@ -105,6 +106,7 @@ class Borrower < AltoModel
       end
       contact_points = {}
       borrowers.each do |b|
+        next unless b.is_a?(Borrower)
         b.department = locs[b.DEPARTMENT_ID] if b.DEPARTMENT_ID
         b.home_site = locs[b.HOME_SITE_ID] if b.HOME_SITE_ID
       end
