@@ -213,8 +213,9 @@ class Borrower < AltoModel
     if rel == 'items'
       if filter.nil? || filter == "loan"
         self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
-          loan.item.add_category('loan')
-          related_entities << loan.item
+          i = Item.find_eager(loan.ITEM_ID)[0]
+          i.add_category('loan')
+          related_entities << i
         end
       end
       if filter.nil? || filter == "hold"
@@ -228,8 +229,9 @@ class Borrower < AltoModel
       end
       if filter.nil? || filter == "interloan"
         self.ill_requests.find(:all, :conditions=>"ILL_STATUS < 6").each do | ill |
-          ill.item.add_category('interloan')
-          related_entities << ill.item
+          i = Item.find_eager(ill.ITEM_ID)[0]
+          i.add_category('interloan')
+          related_entities << i
         end     
       end
     elsif rel == 'resources'
