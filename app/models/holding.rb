@@ -30,6 +30,7 @@ class Holding < AltoModel
   
   def self.post_hooks(entities, format, params)
     entities.each do |holding|
+      next unless holding.is_a?(Holding)
       holding.add_relationship('resource') unless holding.attributes['last_modified'].is_a?(FalseClass)
     end
   end      
