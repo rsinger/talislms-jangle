@@ -145,7 +145,9 @@ class Item < AltoModel
   # Convenience method to return a boolean reflecting an item's current availability status
   def available?
     return false if self.current_loans.is_a?(Array)
-
+    if rsv = self.reservations.find(:all, :conditions=>"STATE < 5")
+      return false unless rsv.empty?
+    end
     if self.status
       unless status.TYPE_STATUS == 5
         return false
