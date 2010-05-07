@@ -65,6 +65,7 @@ class WorkMeta < AltoModel
   def self.post_hooks(entities, format, params)
     works = {}
     entities.each do | e |
+      next unless e.is_a?(WorkMeta)
       works[e.id] = e
     end
     if format == "alto"
