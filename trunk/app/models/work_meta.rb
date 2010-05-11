@@ -165,18 +165,23 @@ class WorkMeta < AltoModel
   def get_relationships(rel, filter, offset, limit) 
     related_entities = []
     if rel == 'items'
-      if self.items
-        if filter
-          i = 0
-          self.items.each do | item |
-            i += 1
-            next if i < (offset - 1)              
-            related_entities << item if item.categories.index(filter)
-            break if related_entities.length == limit
-          end
-        else
-          related_entities = related_entities + self.items[offset, limit]
-        end
+
+
+
+      items = Item.find(:all, :conditions=>["WORK_ID = ?", self.WORK_ID], :include=>[:work_meta, :classification, :location], :offset=>offset, :limit=>limit)
+      i = {}
+      items.each do |item|
+        i[items.id] << item
+      end
+      Loan.find_all_by_ITEM_ID_and_CURRENT_LOAN(i.keys, "T").each do |loan|
+        i[loan.ITEM_ID].current_loans ||=[]
+        i[loan.ITEM_ID].current_loans << loan
+        i[loan.ITEM_ID].add_relationship('actor')
+      end          
+      
+      items.each do | item |      
+        next if filter && !item.categories.index(filter)
+        related_entities << item 
       end
       if self.holdings
         related_entities = related_entities + self.holdings[offset, limit]
