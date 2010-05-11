@@ -215,7 +215,12 @@ class Borrower < AltoModel
     if rel == 'items'
       if filter.nil? || filter == "loan"
         self.loans.find_all_by_CURRENT_LOAN('T').each do | loan |
-          i = Item.find_eager(loan.ITEM_ID)[0]
+          begin
+            i = Item.find_eager(loan.ITEM_ID)[0]
+          rescue TypeError
+            # Sometimes Sybase seems to be confused
+            i = Item.find_eager(loan.ITEM_ID)[0]
+          end
           i.add_category('loan')
           related_entities << i
         end

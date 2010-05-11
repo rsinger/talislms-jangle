@@ -40,4 +40,7 @@ xml.alto :Item, :id=>entity.id, :work=>entity.WORK_ID do |item|
   if status = entity.item_status
     item.alto :status, status.NAME, :code=>status.CODE
   end  
+  if entity.categories && entity.categories.index('hold')
+    
+  end
 end
