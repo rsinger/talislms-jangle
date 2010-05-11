@@ -110,7 +110,7 @@ class Item < AltoModel
       else
         message = self.status.NAME
       end      
-    elsif @categories.index('hold')
+    elsif @categories && @categories.index('hold')
       if self.via && self.via.is_a?(Borrower)
         rsv = self.reservations.find(:first, :conditions=>["BORROWER_ID = ? AND STATE < 5", self.via.id])
         if rsv
