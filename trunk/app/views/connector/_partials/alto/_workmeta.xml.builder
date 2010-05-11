@@ -34,4 +34,11 @@ xml.alto :Work, :id=>entity.id do |work|
     end
     work.alto :classificationDisplay, entity.work.CLASS_DISPLAY
   end
+  if entity.current_reservations
+    work.alto :reservationQueueLength, entity.current_reservations.length
+    entity.current_reservations.each do |rsv|
+      next unless authorized_to_view?(rsv)
+      xml << render(:partial=>"/connector/_partials/alto/reservation.xml.builder", :locals=>{:entity=>rsv})
+    end
+  end  
 end
