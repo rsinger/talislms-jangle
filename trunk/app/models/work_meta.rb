@@ -171,7 +171,7 @@ class WorkMeta < AltoModel
       items = Item.find(:all, :conditions=>["WORK_ID = ?", self.WORK_ID], :include=>[:work_meta, :classification, :location], :offset=>offset, :limit=>limit)
       i = {}
       items.each do |item|
-        i[items.id] << item
+        i[item.id] << item
       end
       Loan.find_all_by_ITEM_ID_and_CURRENT_LOAN(i.keys, "T").each do |loan|
         i[loan.ITEM_ID].current_loans ||=[]
