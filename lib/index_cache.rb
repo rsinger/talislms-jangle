@@ -402,8 +402,8 @@ class ItemHoldingCache < IndexCache
       else i[:holdings] << ident.to_i
       end
     end
-    items = Item.all(:conditions=>{:ITEM_ID=>i[:items]})
-    holdings = Holding.all(:conditions=>{:HOLDINGS_ID=>i[:holdings]})    
+    items = Item.find_eager(i[:items])
+    holdings = Holding.find_eager(i[:holdings])    
     collate(items, holdings)
   end
   
