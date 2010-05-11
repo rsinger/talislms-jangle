@@ -11,7 +11,7 @@ class Item < AltoModel
   has_many :ill_requests, :foreign_key=>"ITEM_ID"
   belongs_to :work, :foreign_key=>"WORK_ID"
   
-  attr_accessor :status, :loan_type, :via, :current_loans, :item_type, :item_status
+  attr_accessor :status, :loan_type, :via, :current_loans, :item_type, :item_status, :current_reservations
   
   # Class methods
   
@@ -79,10 +79,12 @@ class Item < AltoModel
     if format == 'alto'
       type = []
       status = []
+      item_list = {}
       items.each do |i|
         next unless i.is_a?(Item)
         type << i.TYPE_ID  
         status << i.STATUS_ID
+        item_list[i.id] = i
       end
       type_status = {1=>{},6=>{}}
       TypeStatus.find(:all, :conditions=>["(TYPE_STATUS IN (?) AND SUB_TYPE = 1) OR (TYPE_STATUS IN (?) AND SUB_TYPE = 6)", type, status]).each do |ts|
@@ -92,6 +94,13 @@ class Item < AltoModel
         next unless i.is_a?(Item)
         i.item_type = type_status[1][i.TYPE_ID]
         i.item_status = type_status[6][i.STATUS_ID]
+      end
+      
+      Reservation.find(:all, :conditions=>["RESERVATION.STATE < 5 AND RESERVED_LINK.TYPE = 0 AND RESERVED_LINK.TARGET_ID IN (?)", item_list.keys],
+      :joins => "LEFT JOIN RESERVED_LINK ON RESERVATION.RESERVATION_ID = RESERVED_LINK.RESERVATION_ID",
+      :select => "RESERVATION.*, RESERVED_LINK.TARGET_ID as item_id").each do |rsv|
+        item_list[rsv.attributes['item_id']].current_reservations ||=[]
+        item_list[rsv.attributes['item_id']].current_reservations << rsv
       end
     end
   end

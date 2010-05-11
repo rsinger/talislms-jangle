@@ -40,7 +40,11 @@ xml.alto :Item, :id=>entity.id, :work=>entity.WORK_ID do |item|
   if status = entity.item_status
     item.alto :status, status.NAME, :code=>status.CODE
   end  
-  if entity.categories && entity.categories.index('hold')
-    
+  if entity.current_reservations
+    item.alto :reservationQueueLength, entity.current_reservations.length
+    entity.current_reservations.each do |rsv|
+      next unless authorized_to_view?(rsv)
+      xml << render(:partial=>"/connector/_partials/alto/reservation.xml.builder", :locals=>{:entity=>rsv})
+    end
   end
 end

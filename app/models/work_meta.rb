@@ -7,7 +7,7 @@ class WorkMeta < AltoModel
   has_many :collections, :through=>:titles
   has_many :holdings, :foreign_key=>"WORK_ID"
   has_one :work, :foreign_key=>"WORK_ID"
-  attr_accessor :has_collections, :via
+  attr_accessor :has_collections, :via, :current_reservations
   alias :identifier :id
   
   # Returns the total count of rows by requested category
@@ -137,6 +137,12 @@ class WorkMeta < AltoModel
     end
     Holding.find_by_sql(["SELECT DISTINCT WORK_ID FROM SITE_SERIAL_HOLDINGS WHERE WORK_ID IN (?)", works.keys]).each do |holding|
       works[holding.WORK_ID].add_relationship('item')
+    end    
+    Reservation.find(:all, :conditions=>["RESERVATION.STATE < 5 AND RESERVED_LINK.TYPE = 1 AND RESERVED_LINK.TARGET_ID IN (?)", works.keys],
+    :joins => "LEFT JOIN RESERVED_LINK ON RESERVATION.RESERVATION_ID = RESERVED_LINK.RESERVATION_ID",
+    :select => "RESERVATION.*, RESERVED_LINK.TARGET_ID as work_id").each do |rsv|
+      works[rsv.attributes['work_id']].current_reservations ||=[]
+      works[rsv.attributes['work_id']].current_reservations << rsv
     end    
   end
 

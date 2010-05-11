@@ -40,4 +40,13 @@ module ApplicationHelper
     end
     rels
   end
+  
+  def authorized_to_view?(resource)
+    return false unless @auth_user
+    return true if @auth_user.user == :jangle_administrator
+    if resource.is_a?(Reservation)
+      return true if @auth_user.borrower.id == resource.BORROWER_ID
+      return false
+    end
+  end
 end
