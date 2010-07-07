@@ -47,4 +47,14 @@ xml.alto :Item, :id=>entity.id, :work=>entity.WORK_ID do |item|
       xml << render(:partial=>"/connector/_partials/alto/reservation.xml.builder", :locals=>{:entity=>rsv})
     end
   end
+  if action_name == "relationship" and params[:scope] == "actors"
+    charges = entity.charges(params[:id].to_i)
+    unless charges.empty?
+      item.alto :fines do | fines |
+        if charges[:loans]
+          fines.jangle :loans, charges[:loans], :currency=>AppConfig.connector['base_currency'].attributes['CODE'].strip
+        end
+      end
+    end
+  end  
 end
