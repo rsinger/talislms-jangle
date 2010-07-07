@@ -52,7 +52,7 @@ xml.alto :Item, :id=>entity.id, :work=>entity.WORK_ID do |item|
     unless charges.empty?
       item.alto :fines do | fines |
         if charges[:loans]
-          fines.jangle :loans, charges[:loans], :currency=>AppConfig.connector['base_currency'].attributes['CODE'].strip
+          fines.alto :loans, charges[:loans], :currency=>AppConfig.connector['base_currency'].attributes['CODE'].strip
         end
       end
     end
