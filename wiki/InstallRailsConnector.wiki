@@ -15,8 +15,9 @@ A JDK that supports JRuby is required.  [http://kenai.com/projects/jruby/pages/J
     * Install somewhere on your system (i.e. _/opt/local/jruby_) and add _/path/to/jruby/bin_ to your $PATH
   # Update gems to most recent version: _$ sudo jruby -S gem update --system_
   # Install the gems needed to run the connector:  
-  # _$ sudo jruby -S gem install rails -v 2.3.2_ 
-  # _$ sudo jruby -S gem install rsolr -v 0.11.0_
+  # _$ sudo jruby -S gem install rails -v 2.3.8_ 
+  # _$ sudo jruby -S gem install rsolr-direct_
+  # _$ sudo jruby -S gem install activerecord-jdbc-adapter -v 0.9.4_
   # _$ sudo jruby -S gem install activerecord-jdbc marc jrexml vpim composite_primary_keys cql-ruby glassfish_
   # Download the Sybase JDBC driver from http://jtds.sourceforge.net/ and place jtds-1.x.x.jar either in $JRUBY_HOME/lib or in your Java classpath.
   # Check the Rails-connector branch out of svn: _$ svn co http://talislms-jangle.googlecode.com/svn/trunk/ talislms-connector_
