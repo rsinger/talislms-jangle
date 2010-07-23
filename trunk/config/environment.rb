@@ -1,7 +1,7 @@
 # Be sure to restart your server when you modify this file
 
 # Specifies gem version of Rails to use when vendor/rails is not present
-RAILS_GEM_VERSION = '2.3.2' unless defined? RAILS_GEM_VERSION
+RAILS_GEM_VERSION = '2.3.8' unless defined? RAILS_GEM_VERSION
 
 # Bootstrap the Rails environment, frameworks, and default configuration
 require File.join(File.dirname(__FILE__), 'boot')
@@ -41,17 +41,16 @@ Rails::Initializer.run do |config|
   # The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.
   # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}')]
   # config.i18n.default_locale = :de
-  #require 'jdbc_adapter'
+
   config.gem 'jrexml', ">= 0.5.3"
-  config.gem 'rack', '1.0.1'
   config.gem 'marc', ">= 0.3.0"
   config.gem 'vpim' 
   config.gem 'composite_primary_keys'
   config.gem 'cql-ruby', :lib => 'cql_ruby'
-  #config.gem 'rsolr-direct'
   config.gem 'builder'
   config.gem 'rsolr'
   config.gem 'rsolr-direct'
+
   case AppConfig.connector['solr_opts'][:connection]
   when "standard"    
     require 'rsolr'
@@ -61,12 +60,7 @@ Rails::Initializer.run do |config|
     RSolr.load_java_libs    
     AppConfig.solr = RSolr.connect :direct, :solr_home=>AppConfig.connector['solr_opts'][:solr_home]
   end
-  #require 'rsolr-direct'
-  #RSolr.load_java_libs
-  #Dir[RAILS_ROOT+'/lib/apache-solr-1.4.0/dist/*.jar'].each{|jar|require jar}
-  #Dir[RAILS_ROOT+'/lib/apache-solr-1.4.0/lib/*.jar'].each{|jar|require jar}  
-  #dc = org.apache.solr.servlet.DirectSolrConnection.new(AppConfig.connector['solr_opts'][:direct][:solr_home], AppConfig.connector['solr_opts'][:direct][:solr_data], nil)
-  #AppConfig.solr = RSolr.connect :direct, dc
+
 end
 at_exit do
   AppConfig.solr.connection.close
