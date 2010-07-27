@@ -366,6 +366,70 @@ class ItemHoldingCache < IndexCache
     item_holdings
   end  
   
+  def self.get_relationships(ids, rel, filter, offset, limit, borrower_id=nil)
+    i = {:items=>[],:holdings=>[]}
+    [*ids].each do |id|
+      model,ident=id.split("-",2)
+      case model
+      when "I" then i[:items] << ident.to_i
+      else i[:holdings] << ident.to_i
+      end
+    end    
+    related_entities = []
+    if rel == 'resources'
+      items = Item.find(i[:items])
+      holdings = Holding.find(i[:holdings])
+      works = {}
+      items.each do |item|
+        works[item.WORK_ID] ||=[]
+        works[item.WORK_ID] << item
+      end
+      holdings.each do |holding|
+        works[holding.work_meta.id] ||=[]
+        works[holding.work_meta.id] << holding
+      end    
+      work_metas = WorkMeta.find_eager(works.keys)
+
+      work_metas.each do |wm|
+        if filter
+          if filter == "opac"
+            next unless wm.SUPPRESS_FROM_OPAC == 'F' && wm.SUPPRESS_FROM_INDEX = 'F'
+          end
+        end
+        wm.via = works[wm.id]
+        related_entities << wm
+      end
+
+    elsif rel == 'actors'
+      if filter.nil? or filter == 'loan'
+        Loan.find(:all, :conditions=>["CURRENT_LOAN = 'T' AND ITEM_ID IN (?)", i[:items]], :include=>[:borrower, :item]).each do |loan|
+          loan.borrower.add_category('loan')
+          loan.borrower.via ||=[]
+          loan.borrower.via << loan.item
+          related_entities << loan.borrower unless borrower_id && borrower_id != loan.borrower.BORROWER_ID
+        end
+      end
+      if filter.nil? or filter == 'hold'
+        Reservation.find(:all, :conditions=>["STATE < 5 AND SATISFYING_ITEM_ID IN (?)", i[:items]], :include=>[:borrower, :item]).each do | rsv |
+          rsv.borrower.add_category('hold')
+          rsv.borrower.via ||=[]
+          rsv.borrower.via << rsv.item          
+          related_entities << rsv.borrower unless borrower_id && borrower_id != rsv.borrower.BORROWER_ID
+        end
+      end
+      if filter.nil? or filter == 'interloan'
+        IllRequest.find(:all, :conditions=>["ILL_STATUS < 6 AND ITEM_ID IN (?)", i[:items]], :include=>[:borrower, :item]).each do | ill |
+          ill.borrower.add_category('interloan')
+          ill.borrower.via ||=[]
+          ill.borrower.via << ill.item          
+          related_entities << ill.borrower unless borrower_id && borrower_id != ill.borrower.BORROWER_ID
+        end      
+      end
+    end
+
+    related_entities    
+  end
+  
   def self.collate(items, holdings)
     item_holdings = ResultSet.new
     items.each do | item |

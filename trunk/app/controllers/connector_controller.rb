@@ -80,28 +80,30 @@ class ConnectorController < ApplicationController
   
   # Returns the entity relationship feed
   def relationship
-    entities = case params[:scope]
+    if params[:offset]
+      @offset = params[:offset].to_i
+    else
+      @offset = 0
+    end
+    
+    @entities = case params[:scope]
     when 'actors'
       if @auth_user && (@auth_user.user == :jangle_administrator || @auth_user.borrower_id == params[:id].to_i)
-        Borrower.find(id_translate(params[:id]))
+        Borrower.get_relationships(id_translate(params[:id]), params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
       else
         render :text => "Not Authorized", :status=>401
         return
       end      
-    when 'collections' then Collection.find(id_translate(params[:id]))
-    when 'items' then ItemHoldingCache.find(id_translate(params[:id]))
-    when 'resources' then WorkMeta.find(id_translate(params[:id]))
+    when 'collections' then Collection.get_relationships(id_translate(params[:id]), params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
+    when 'items'
+      borrower = nil
+      if params[:entity] == 'actors' && @auth_user.user != :jangle_administrator
+        borrower = @auth_user.borrower_id
+      end
+      ItemHoldingCache.get_relationships(id_translate(params[:id]), params[:entity], params[:filter], @offset, AppConfig.connector['page_size'], borrower)      
+    when 'resources' then WorkMeta.get_relationships(id_translate(params[:id]), params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
     end
     
-    @offset = 0
-    @entities = []
-    entities.each do | entity |
-      if params[:entity] == 'actors' && @auth_user.user != :jangle_administrator
-        @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'], @auth_user.borrower_id)
-      else
-        @entities = @entities + entity.get_relationships(params[:entity], params[:filter], @offset, AppConfig.connector['page_size'])
-      end
-    end
     @entities.uniq! # the same entity could be associated with multiple 'scope' resources.
     @total = @entities.length
     populate_entities unless @entities.empty?
@@ -194,6 +196,7 @@ class ConnectorController < ApplicationController
     if (params[:entity] && params[:entity] == 'actors') || (params[:scope] && params[:scope] == 'actors')
       @auth_user = authenticate
     end
+
     @connector_base = (request.headers['X_CONNECTOR_BASE']||'/connector')
     @format = determine_format(params)
   end
@@ -201,14 +204,16 @@ class ConnectorController < ApplicationController
   # Do any post processing necessary for the models.
   # TODO: deprecate in favor of AltoModel.post_hook
   def populate_entities    
-    @entities.first.class.find_associations(@entities)
+
     classes = []
     @entities.each do |e|
       classes << e.class unless classes.index(e.class)
     end
 
     classes.each do |c|
+      c.find_associations(@entities)
       c.post_hooks(@entities, @format, params)
+      
     end
 
     #@entities.first.class.post_hooks(@entities, @format, params)

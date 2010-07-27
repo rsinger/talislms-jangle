@@ -42,10 +42,10 @@ xml.alto :Item, :id=>entity.id, :work=>entity.WORK_ID do |item|
   end  
   if entity.current_reservations
     item.alto :reservationQueueLength, entity.current_reservations.length
-    entity.current_reservations.each do |rsv|
-      next unless authorized_to_view?(rsv)
-      xml << render(:partial=>"/connector/_partials/alto/reservation.xml.builder", :locals=>{:entity=>rsv})
-    end
+    #entity.current_reservations.each do |rsv|
+    #  next unless authorized_to_view?(rsv)
+    #  xml << render(:partial=>"/connector/_partials/alto/reservation.xml.builder", :locals=>{:entity=>rsv})
+    #end
   end
   if action_name == "relationship" and params[:scope] == "actors"
     charges = entity.charges(params[:id].to_i)
