@@ -46,7 +46,10 @@
       end
       if entity.via
         ent["links"] ||={}
-        ent["links"]["via"] = [{"type"=>"application/atom+xml", "href"=>entity_uri(entity.via.identifier, params[:scope])}]
+        ent["links"]["via"] ||= []
+        [*entity.via].each do |via|
+          ent["links"]["via"] << {"type"=>"application/atom+xml", "href"=>entity_uri(via.identifier, params[:scope])}
+        end
       end
       data << ent
     end %>

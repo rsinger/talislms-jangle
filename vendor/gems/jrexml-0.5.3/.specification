@@ -1,0 +1,84 @@
+--- !ruby/object:Gem::Specification 
+name: jrexml
+version: !ruby/object:Gem::Version 
+  prerelease: false
+  segments: 
+    - 0
+    - 5
+    - 3
+  version: 0.5.3
+platform: ruby
+authors: 
+  - Nick Sieger
+autorequire: 
+bindir: bin
+cert_chain: 
+date: 2008-01-16 00:00:00 -05:00
+default_executable: 
+dependencies: []
+
+description: JREXML is an add-on for JRuby that uses a Java pull parser library to speed up REXML.
+email: nick@nicksieger.com
+executables: []
+
+extensions: []
+
+extra_rdoc_files: 
+  - History.txt
+  - Manifest.txt
+  - README.txt
+  - LICENSE.txt
+  - lib/xpp3.LICENSE.txt
+files: 
+  - History.txt
+  - Manifest.txt
+  - README.txt
+  - LICENSE.txt
+  - Rakefile
+  - lib/jrexml/ext/base_parser.rb
+  - lib/jrexml/ext/no_unnormalize.rb
+  - lib/jrexml/java_pull_parser.rb
+  - lib/jrexml/version.rb
+  - lib/jrexml.rb
+  - lib/xpp3-1.1.4.jar
+  - lib/xpp3.LICENSE.txt
+  - spec/document_spec.rb
+  - spec/java_pull_parser_spec.rb
+  - spec/spec_helper.rb
+  - spec/atom_feed.xml
+has_rdoc: true
+homepage: http://caldersphere.rubyforge.org/jrexml
+licenses: []
+
+post_install_message: 
+rdoc_options: 
+  - --main
+  - README.txt
+require_paths: 
+  - lib
+required_ruby_version: !ruby/object:Gem::Requirement 
+  requirements: 
+    - - ">"
+      - !ruby/object:Gem::Version 
+        segments: 
+          - 0
+          - 0
+          - 0
+        version: 0.0.0
+required_rubygems_version: !ruby/object:Gem::Requirement 
+  requirements: 
+    - - ">="
+      - !ruby/object:Gem::Version 
+        segments: 
+          - 0
+        version: "0"
+requirements: []
+
+rubyforge_project: caldersphere
+rubygems_version: 1.3.6
+signing_key: 
+specification_version: 1
+summary: JREXML speeds up REXML under JRuby by using a Java pull parser.
+test_files: 
+  - spec/document_spec.rb
+  - spec/java_pull_parser_spec.rb

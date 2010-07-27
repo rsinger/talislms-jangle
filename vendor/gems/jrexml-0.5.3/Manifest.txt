@@ -1,0 +1,16 @@
+History.txt
+Manifest.txt
+README.txt
+LICENSE.txt
+Rakefile
+lib/jrexml/ext/base_parser.rb
+lib/jrexml/ext/no_unnormalize.rb
+lib/jrexml/java_pull_parser.rb
+lib/jrexml/version.rb
+lib/jrexml.rb
+lib/xpp3-1.1.4.jar
+lib/xpp3.LICENSE.txt
+spec/document_spec.rb
+spec/java_pull_parser_spec.rb
+spec/spec_helper.rb
+spec/atom_feed.xml

@@ -74,6 +74,22 @@ class Collection < AltoModel
       :content_type=>AppConfig.connector['record_types'][format]['content-type']}
   end  
   
+  def self.get_relationships(ids, rel, filter, offset, limit)
+    related_entities = []
+    if rel == 'resources'
+      titles = Title.find(:all, :conditions=>["COLLECTION_ID IN (?)", [*ids]], :include=>[:work_meta, :collection], :offset=>offset, :limit=>limit)
+      works = {}
+      titles.each do |title|
+        unless works[title.work_meta.id]
+          works[title.work_meta.id] = title.work_meta
+          works[title.work_meta.id].via = []
+        end
+        works[title.work_meta.id].via << title.collection
+      end
+      related_entities = works.values
+    end
+  end
+  
   # Gets the related Resources associated with a Collection
   # TODO: this almost certainly doesn't work right.  It probably
   # makes more sense to include the Collections in WorkMeta.to_doc and
@@ -98,16 +114,6 @@ class Collection < AltoModel
     end
   end
 
-  # Sets the relationships to other resources
-  # TODO: this really needs to move into a helper  
-  def relationships
-    relationships = nil    
-    if self.has_works
-      relationships = {'http://jangle.org/vocab/Entities#Resource' => "/resources/"}
-    end
-    relationships
-  end  
-  
   # Return a "title" for feed responses
   def title
     self.NAME

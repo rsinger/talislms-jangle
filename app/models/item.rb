@@ -130,8 +130,8 @@ class Item < AltoModel
         end          
       end
       if message.empty?
-        rsv = self.reservations.find(:all, :conditions=>"STATE < 5")
-        message = "Reserved"
+        #rsv = self.reservations.find(:all, :conditions=>"STATE < 5")
+        message = "Reserved" if self.current_reservations
       end
     elsif self.current_loans.is_a?(Array) and curr_loan = self.current_loans.first
       #
@@ -154,9 +154,10 @@ class Item < AltoModel
   # Convenience method to return a boolean reflecting an item's current availability status
   def available?
     return false if self.current_loans.is_a?(Array)
-    if rsv = self.reservations.find(:all, :conditions=>"STATE < 5")
-      return false unless rsv.empty?
-    end
+    #if rsv = self.reservations.find(:all, :conditions=>"STATE < 5")
+    #  return false unless rsv.empty?
+    #end
+    return false unless self.current_reservations.nil?
     if self.status
       unless status.TYPE_STATUS == 5
         return false

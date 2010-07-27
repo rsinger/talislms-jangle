@@ -165,6 +165,50 @@ class WorkMeta < AltoModel
       :content_type=>AppConfig.connector['record_types'][format]['content-type'],:relationships=>relationships}
   end  
   
+  def self.get_relationships(ids, rel, filter, offset, limit)
+    related_entities = []
+    if rel == 'items'
+
+      items = Item.find(:all, :conditions=>["WORK_ID IN (?)", [*ids]], :select=>"ITEM_ID, WORK_ID", :include=>[:work_meta], :offset=>offset, :limit=>limit)
+      i = {}
+      items.each do |item|
+        i["I-#{item.id}"] ||=[]
+        i["I-#{item.id}"] << item.work_meta
+      end
+       
+      holdings = Holding.find(:all, :conditions=>["WORK_ID IN (?)", [*ids]], :select=>"HOLDINGS_ID, WORK_ID", :include=>[:work_meta], :offset=>offset, :limit=>limit)
+      holdings.each do |holding|
+        i["H-#{holding.id}"] ||=[]
+
+        i["H-#{holding.id}"] << holding.work_meta
+      end      
+
+      ItemHoldingCache.find(i.keys).each do | item |      
+        next if filter && !item.categories.index(filter)
+        i[item.identifier].each do |work|
+          item.via ||=[]
+          item.via << work
+        end
+        related_entities << item 
+      end
+
+    elsif rel == 'collections'
+      #related_entities = self.collections
+      titles = Title.find(:all, :conditions=>["WORK_ID IN (?)", [*ids]], :include=>[:work_meta, :collection], :offset=>offset, :limit=>limit)
+      collections = {}
+      titles.each do |title|
+        unless collections[title.collection.id]
+          collections[title.collection.id] = title.collection
+          collections[title.collection.id].via = []
+        end
+        collections[title.collection.id].via << title.work_meta
+      end
+      related_entities = collections.values
+    end
+ 
+    related_entities 
+  end
+  
   # Gets the related entities to the WorkMeta object and sets appropriate categories
   # TODO: this should become a class method, since we don't actually *need*
   # the WorkMetas themselves to accomplish this (and would be more efficient)  
@@ -172,9 +216,7 @@ class WorkMeta < AltoModel
     related_entities = []
     if rel == 'items'
 
-
-
-      items = Item.find(:all, :conditions=>["WORK_ID = ?", self.WORK_ID], :include=>[:work_meta, :classification, :location], :offset=>offset, :limit=>limit)
+      items = Item.find(:all, :conditions=>["WORK_ID = ?", self.WORK_ID], :include=>[:work_meta, :classification, :location, :work], :offset=>offset, :limit=>limit)
       i = {}
       items.each do |item|
         i[item.id] = item

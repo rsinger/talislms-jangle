@@ -193,11 +193,6 @@ class Borrower < AltoModel
   def created
     self.CREATE_DATE if self.CREATE_DATE
   end
-     
-  # Returns the categories as an array.
-  def categories
-    @categories
-  end
   
   # Returns the Jangle entry.
   # TODO: this needs to be deprecated into a view.
@@ -207,6 +202,55 @@ class Borrower < AltoModel
       :content_type=>AppConfig.connector['record_types'][format]['content-type'],:relationships=>relationships}
   end
     
+  def self.get_relationships(ids, rel, filter, offset, limit)
+    related_entities = []
+    if rel == 'items'
+      items = {}
+      if filter.nil? || filter == "loan"
+        Loan.find(:all, :conditions=>["CURRENT_LOAN = 'T' AND BORROWER_ID IN (?)", [*ids]], :include=>[:borrower]).each do |loan|
+          items[loan.ITEM_ID] ||={:borrowers=>[],:categories=>[]}
+          items[loan.ITEM_ID][:borrowers] << loan.borrower
+          items[loan.ITEM_ID][:categories] << 'loan'
+        end
+      end
+      if filter.nil? || filter == "hold"
+        Reservation.find(:all, :conditions=>["STATE < 5 AND BORROWER_ID IN (?)", [*ids]], :select=>"RESERVATION.*, RESERVED_LINK.TARGET_ID as item_id", :joins=>"LEFT JOIN RESERVED_LINK ON RESERVATION.RESERVATION_ID = RESERVED_LINK.RESERVATION_ID AND RESERVED_LINK.TYPE = 0", :include=>[:borrower]).each do |rsv|
+          items[rsv.item_id] ||={:borrowers=>[],:categories=>[]}
+          items[rsv.item_id][:borrowers] << rsv.borrower unless items[rsv.item_id][:borrowers].index(rsv.borrower)
+          items[rsv.item_id][:categories] << 'hold'
+        end
+      end
+      if filter.nil? || filter == "interloan"
+        IllRequest.find(:all, :conditions=>["ILL_STATUS < 6 AND BORROWER_ID IN (?)", [*ids]], :include=>[:borrower]).each do | ill |
+          items[ill.item_id] ||={:borrowers=>[],:categories=>[]}
+          items[ill.item_id][:borrowers] << ill.borrower unless items[ill.item_id][:borrowers].index(ill.borrower)
+          items[ill.item_id][:categories] << 'interloan'
+        end     
+      end
+      Item.find_eager(items.keys).each do |item|
+        item.via = items[item.id][:borrowers]
+        items[item.id][:categories].each do | cat |
+          item.add_category(cat)
+        end
+        related_entities << item
+      end
+    elsif rel == 'resources'
+      works = {}
+      if filter.nil? || filter == "hold"
+        Reservation.find(:all, :conditions=>["STATE < 5 AND BORROWER_ID IN (?)", [*ids]], :select=>"RESERVATION.*, RESERVED_LINK.TARGET_ID as work_id", :joins=>"LEFT JOIN RESERVED_LINK ON RESERVATION.RESERVATION_ID = RESERVED_LINK.RESERVATION_ID AND RESERVED_LINK.TYPE = 0", :include=>[:borrower]).each do |rsv|        
+          works[rsv.work_id] ||= []
+          works[rsv.work_id] << rsv.borrower
+        end
+        WorkMeta.find_eager(works.keys).each do |wm|
+          wm.via = works[wm.id]
+          wm.add_category('hold')
+          related_entities << wm
+        end
+      end      
+    end
+
+    related_entities
+  end    
   # Gets the related entities to the Borrower and sets appropriate categories
   # TODO: this should become a class method, since we don't actually *need*
   # the Borrowers themselves to accomplish this (and would be more efficient)
