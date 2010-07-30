@@ -9,8 +9,10 @@ xml.alto :Reservation, :id=>entity.id do |reservation|
   if entity.SATISFIED_DATETIME
     reservation.alto :satisfiedDateTime, entity.SATISFIED_DATETIME.xmlschema
   end
-  reservation.alto :collectionSite do |site|
-    xml << render(:partial=>"/connector/_partials/alto/location.xml.builder", :locals=>{:entity=>entity.location})
+  if entity.location
+    reservation.alto :collectionSite do |site|
+      xml << render(:partial=>"/connector/_partials/alto/location.xml.builder", :locals=>{:entity=>entity.location})
+    end
   end
   reservation.alto :created, entity.CREATE_DATE.xmlschema
   reservation.alto :lastModified, entity.EDIT_DATE.xmlschema
