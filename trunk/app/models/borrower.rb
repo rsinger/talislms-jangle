@@ -227,12 +227,14 @@ class Borrower < AltoModel
           items[ill.item_id][:categories] << 'interloan'
         end     
       end
-      Item.find_eager(items.keys).each do |item|
-        item.via = items[item.id][:borrowers]
-        items[item.id][:categories].each do | cat |
-          item.add_category(cat)
+      unless items.empty?
+        Item.find_eager(items.keys).each do |item|
+          item.via = items[item.id][:borrowers]
+          items[item.id][:categories].each do | cat |
+            item.add_category(cat)
+          end
+          related_entities << item
         end
-        related_entities << item
       end
     elsif rel == 'resources'
       works = {}
