@@ -222,9 +222,9 @@ class Borrower < AltoModel
       end
       if filter.nil? || filter == "interloan"
         IllRequest.find(:all, :conditions=>["ILL_STATUS < 6 AND BORROWER_ID IN (?)", [*ids]], :include=>[:borrower]).each do | ill |
-          items[ill.item_id] ||={:borrowers=>[],:categories=>[]}
-          items[ill.item_id][:borrowers] << ill.borrower unless items[ill.item_id][:borrowers].index(ill.borrower)
-          items[ill.item_id][:categories] << 'interloan'
+          items[ill.ITEM_ID] ||={:borrowers=>[],:categories=>[]}
+          items[ill.ITEM_ID][:borrowers] << ill.borrower unless items[ill.ITEM_ID][:borrowers].index(ill.borrower)
+          items[ill.ITEM_ID][:categories] << 'interloan'
         end     
       end
       unless items.empty?
