@@ -48,7 +48,7 @@ Rails::Initializer.run do |config|
   config.gem 'composite_primary_keys'
   config.gem 'cql-ruby', :lib => 'cql_ruby'
   config.gem 'builder'
-  config.gem 'rsolr'
+  #config.gem 'rsolr'
   config.gem 'rsolr-direct'
 
   case AppConfig.connector['solr_opts'][:connection]
@@ -57,7 +57,7 @@ Rails::Initializer.run do |config|
     AppConfig.solr = RSolr.connect :url=>AppConfig.connector['solr_opts'][:solr_home]
   when "direct"    
     require 'rsolr-direct'
-    RSolr.load_java_libs    
+    RSolr.load_java_libs AppConfig.connector['solr_opts'][:solr_home]   
     AppConfig.solr = RSolr.connect :direct, :solr_home=>AppConfig.connector['solr_opts'][:solr_home]
   end
 
