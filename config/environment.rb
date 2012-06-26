@@ -58,7 +58,7 @@ Rails::Initializer.run do |config|
   when "direct"    
     require 'rsolr-direct'
     RSolr::Direct.load_java_libs AppConfig.connector['solr_opts'][:solr_home]   
-    AppConfig.solr = RSolr.connect :direct, :solr_home=>AppConfig.connector['solr_opts'][:solr_home]
+    AppConfig.solr = RSolr.direct_connect :solr_home=>AppConfig.connector['solr_opts'][:solr_home]
   end
 
 end
